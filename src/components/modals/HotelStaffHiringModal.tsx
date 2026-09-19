@@ -6,6 +6,7 @@ import {
   MapPin, Clock, AlertCircle, Loader2, IndianRupee
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { getApiBaseUrl } from '@/lib/apiConfig';
 
 interface StaffItem {
   id: string;
@@ -105,7 +106,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingRef, setBookingRef] = useState('');
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+  const API_BASE = getApiBaseUrl();
 
   // Timer countdown
   useEffect(() => {

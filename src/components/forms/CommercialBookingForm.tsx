@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Check, Plus, Trash2, ArrowRight, ArrowLeft, ShieldCheck, CheckCircle2, Building2 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { getApiBaseUrl } from '@/lib/apiConfig';
 
 interface StaffItem {
   id: string;
@@ -124,7 +125,7 @@ export default function CommercialBookingForm() {
     }));
   };
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+  const API_BASE = getApiBaseUrl();
 
   // OTP Handlers using existing backend API /api/admin/users/send-otp
   const handleSendOtp = async () => {

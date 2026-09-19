@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Check, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { getApiBaseUrl } from '@/lib/apiConfig';
 
 interface DailyStaffItem {
   category: string;
@@ -42,7 +43,7 @@ export default function DailyBasisBookingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+  const API_BASE = getApiBaseUrl();
 
   // OTP Handlers
   const handleSendOtp = async () => {
