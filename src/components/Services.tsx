@@ -870,7 +870,12 @@ export default function Services() {
             </article>
 
             {/* ================= CARD 4: OCCASION ================= */}
-            <article className="zc-card zc-occasion">
+            <article 
+              className="zc-card zc-occasion"
+              onClick={() => {
+                window.location.href = "/services/book-chef-on-birthday-party";
+              }}
+            >
               <div className="zc-shine"></div>
 
               <div className="zc-badge">
@@ -936,7 +941,21 @@ export default function Services() {
 
               <Link
                 href="/services/book-chef-on-birthday-party"
-                className="zc-button"
+                className="zc-button !bg-gradient-to-r !from-[#7639e8] !to-[#5d20c6] !text-white !shadow-[0_9px_20px_rgba(109,43,217,0.25)]"
+                style={{
+                  background: 'linear-gradient(135deg, #7639e8, #5d20c6)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  padding: '10px 15px',
+                  borderRadius: '50px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  textDecoration: 'none',
+                  boxShadow: '0 9px 20px rgba(109, 43, 217, 0.25)'
+                }}
               >
                 Continue
                 <span className="zc-arrow">→</span>

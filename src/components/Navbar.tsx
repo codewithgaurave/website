@@ -138,7 +138,6 @@ export default function Navbar() {
     { name: "Services", href: "#", hasDropdown: true },
     { name: "Packages", href: "/packages", hasDropdown: true },
     { name: "Training", href: "/training", hasDropdown: true },
-    { name: "For Job Seekers", href: "/partner", hasDropdown: true },
     { name: "Contact Us", href: "/contact", hasDropdown: false },
   ];
 
@@ -182,28 +181,28 @@ export default function Navbar() {
             <span className="hidden md:inline text-slate-600">|</span>
 
             {/* Social Icons */}
-            <div className="hidden sm:flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-2">
               {/* WhatsApp */}
               <a 
                 href="https://wa.me/919519808734" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-6 h-6 rounded-full border border-slate-600 hover:border-white flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-full border border-slate-600 hover:border-[#25D366] hover:bg-[#25D366]/10 flex items-center justify-center text-slate-300 hover:text-[#25D366] transition-colors"
                 aria-label="WhatsApp"
               >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.077-2.073-.497-1.745-.726-2.859-2.5-2.946-2.616-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.073.376-.043.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/>
                 </svg>
               </a>
               {/* Instagram */}
               <a 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/zomocook?stkn=MTdmZzhma3ZqNzM4dg==" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-6 h-6 rounded-full border border-slate-600 hover:border-white flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-full border border-slate-600 hover:border-[#E1306C] hover:bg-[#E1306C]/10 flex items-center justify-center text-slate-300 hover:text-[#E1306C] transition-colors"
                 aria-label="Instagram"
               >
-                <svg className="w-3 h-3 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
                   <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                   <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
@@ -211,37 +210,25 @@ export default function Navbar() {
               </a>
               {/* Facebook */}
               <a 
-                href="https://facebook.com" 
+                href="https://www.facebook.com/share/1DJWk3itdn/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-6 h-6 rounded-full border border-slate-600 hover:border-white flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-full border border-slate-600 hover:border-[#1877F2] hover:bg-[#1877F2]/10 flex items-center justify-center text-slate-300 hover:text-[#1877F2] transition-colors"
                 aria-label="Facebook"
               >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.374 14.5 5 15.5 5H18V0h-3.808C10.593 0 9 1.582 9 4.615V8z"/>
-                </svg>
-              </a>
-              {/* LinkedIn */}
-              <a 
-                href="https://linkedin.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-6 h-6 rounded-full border border-slate-600 hover:border-white flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                aria-label="LinkedIn"
-              >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45c-.89 0-1.61.72-1.61 1.61 0 .89.72 1.61 1.61 1.61.89 0 1.61-.72 1.61-1.61 0-.89-.72-1.61-1.61-1.61z"/>
                 </svg>
               </a>
               {/* YouTube */}
               <a 
-                href="https://youtube.com" 
+                href="https://youtube.com/@zomocook?si=QbchUxuuFXYxTXAo" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-6 h-6 rounded-full border border-slate-600 hover:border-white flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-full border border-slate-600 hover:border-[#FF0000] hover:bg-[#FF0000]/10 flex items-center justify-center text-slate-300 hover:text-[#FF0000] transition-colors"
                 aria-label="YouTube"
               >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
               </a>
@@ -272,22 +259,12 @@ export default function Navbar() {
             
             {/* Logo area */}
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center gap-2.5 group">
+              <Link href="/" className="flex items-center group">
                 <img 
                   src="/logo.jpeg" 
                   alt="ZomoCook Logo" 
-                  className="h-10 sm:h-12 w-auto object-contain rounded-lg" 
+                  className="h-11 sm:h-13 md:h-14 w-auto object-contain rounded-lg" 
                 />
-                <div className="hidden sm:flex flex-col">
-                  <div className="flex items-center">
-                    <span className="text-[20px] font-black text-[#001529] tracking-tight">ZOMO</span>
-                    <span className="text-[20px] font-black text-[#d62423] tracking-tight">COOK</span>
-                    <span className="text-[10px] font-bold text-slate-400 ml-0.5 align-super">TM</span>
-                  </div>
-                  <span className="text-[9px] font-semibold text-slate-500 -mt-1 tracking-tight">
-                    Chefs | Staff | Training | Hospitality Solutions
-                  </span>
-                </div>
               </Link>
             </div>
 
@@ -462,16 +439,7 @@ export default function Navbar() {
                       </div>
                     )}
 
-                    {/* Menu: For Job Seekers */}
-                    {link.name === "For Job Seekers" && (
-                      <div className={`absolute top-[48px] left-1/2 -translate-x-1/2 mt-0 w-[240px] bg-white shadow-xl rounded-xl transition-all duration-200 p-3 border border-slate-100 z-50 ${activeDropdown === link.name ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-                        <ul className="space-y-1 text-[13px] font-semibold text-slate-700">
-                          <li><Link href="/partner" onClick={() => setActiveDropdown(null)} className="block px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#d62423] transition-colors">Join as Chef Partner</Link></li>
-                          <li><Link href="/agent" onClick={() => setActiveDropdown(null)} className="block px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#d62423] transition-colors">Join as Agent</Link></li>
-                          <li><Link href="/contact" onClick={() => setActiveDropdown(null)} className="block px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#d62423] transition-colors">Job Openings</Link></li>
-                        </ul>
-                      </div>
-                    )}
+
                   </div>
                 );
               })}
