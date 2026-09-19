@@ -4,7 +4,8 @@ import {
   X, Check, Plus, Trash2, ArrowRight, ArrowLeft, 
   ShieldCheck, CheckCircle2, Store, Home, Calendar, 
   ChefHat, Phone, User, MapPin, Clock, AlertCircle, 
-  Loader2, IndianRupee, Sparkles, PartyPopper, Utensils
+  Loader2, IndianRupee, Sparkles, PartyPopper, Utensils,
+  CalendarDays, Tag
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getApiBaseUrl } from '@/lib/apiConfig';
@@ -33,6 +34,12 @@ interface DailyStaffItem {
   startTime: string;
   endTime: string;
   days: number;
+}
+
+interface PartyDateItem {
+  id: string;
+  date: string;
+  meals: string[]; // 'Breakfast' | 'Lunch' | 'Dinner'
 }
 
 const commercialServiceCategories = [
@@ -124,31 +131,56 @@ const dailyRoles = [
 // Party constants
 const occasionTypes = [
   'Birthday Party',
-  'Anniversary Party',
-  'House Party / Gathering',
+  'Anniversary',
+  'Wedding',
+  'Engagement',
   'Kitty Party',
-  'Family Get Together',
-  'Wedding / Pre-Wedding',
-  'Cocktail / Bachelor Party',
-  'Corporate Event / Dinner'
+  'House Party',
+  'Corporate Event',
+  'Festival / Religious Event',
+  'Family Function',
+  'Other'
 ];
 
-const guestCounts = [
-  '10 – 25 Guests',
-  '25 – 50 Guests',
-  '50 – 100 Guests',
-  '100 – 200 Guests',
-  '200+ Guests'
+const partyCuisinesList = [
+  'Indian',
+  'Chinese',
+  'South Indian',
+  'Mughlai',
+  'Continental',
+  'Other'
 ];
 
-const cuisineOptions = [
-  'North Indian & Mughlai',
-  'Chinese & Pan-Asian',
-  'South Indian Delicacies',
-  'Tandoor & Starters',
-  'Continental & Italian',
-  'Chaat & Street Food',
-  'Desserts & Bakery'
+const breakfastMenuOptions = [
+  'Poha',
+  'Aloo Paratha',
+  'Paneer Paratha',
+  'Idli',
+  'Upma',
+  'Chole Bhature',
+  'Poori Bhaji',
+  'Masala Dosa'
+];
+
+const lunchMenuOptions = [
+  'Dal Tadka',
+  'Shahi Paneer',
+  'Mix Veg',
+  'Jeera Rice',
+  'Veg Biryani',
+  'Raita',
+  'Salad'
+];
+
+const dinnerMenuOptions = [
+  'Dal Makhani',
+  'Paneer Butter Masala',
+  'Kadhai Paneer',
+  'Veg Biryani',
+  'Naan',
+  'Butter Roti',
+  'Raita',
+  'Salad'
 ];
 
 export default function HotelStaffHiringModal({ isOpen, onClose, initialService = 'commercial' }: HotelStaffHiringModalProps) {
@@ -191,7 +223,6 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const [homeAddress, setHomeAddress] = useState('');
   const [homeCookLevel, setHomeCookLevel] = useState('standard');
   const [homeFoodPref, setHomeFoodPref] = useState('Both Veg & Non-Veg');
-  const [homeGenderPref, setHomeGenderPref] = useState('Anyone');
   const [homeDuration, setHomeDuration] = useState('10 Hours');
   const [homeFamilyMembers, setHomeFamilyMembers] = useState('3-4 Members');
   const [homeStartDate, setHomeStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -200,7 +231,6 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   // 3. Daily Staff State
   const [dailyOutletName, setDailyOutletName] = useState('');
   const [dailyAddress, setDailyAddress] = useState('');
-  const [dailyBookingType, setDailyBookingType] = useState('Commercial');
   const [dailyStaffRequirement, setDailyStaffRequirement] = useState<DailyStaffItem>({
     role: 'Waiter',
     count: 1,
@@ -212,15 +242,25 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   });
   const [dailyAgreeTerms, setDailyAgreeTerms] = useState(true);
 
-  // 4. Party Chef State
+  // 4. Party Chef State (5 Steps as per reference)
   const [partyVenueAddress, setPartyVenueAddress] = useState('');
   const [partyOccasionType, setPartyOccasionType] = useState('Birthday Party');
-  const [partyGuestCount, setPartyGuestCount] = useState('25 – 50 Guests');
-  const [partyMealType, setPartyMealType] = useState('Dinner');
-  const [partyCuisines, setPartyCuisines] = useState<string[]>(['North Indian & Mughlai', 'Tandoor & Starters']);
-  const [partyDate, setPartyDate] = useState(new Date().toISOString().split('T')[0]);
-  const [partyTime, setPartyTime] = useState('19:00');
-  const [partyAgreeTerms, setPartyAgreeTerms] = useState(true);
+  const [partyDatesList, setPartyDatesList] = useState<PartyDateItem[]>([
+    {
+      id: '1',
+      date: new Date().toISOString().split('T')[0],
+      meals: ['Dinner']
+    }
+  ]);
+  const [partySelectedCuisine, setPartySelectedCuisine] = useState<string>('Indian');
+  const [partyChooseLater, setPartyChooseLater] = useState<boolean>(false);
+  const [partyBreakfastItems, setPartyBreakfastItems] = useState<string[]>(['Paneer Paratha', 'Poha']);
+  const [partyLunchItems, setPartyLunchItems] = useState<string[]>(['Dal Tadka', 'Shahi Paneer', 'Jeera Rice']);
+  const [partyDinnerItems, setPartyDinnerItems] = useState<string[]>(['Dal Makhani', 'Paneer Butter Masala', 'Naan']);
+  const [partyGuestCount, setPartyGuestCount] = useState<string>('25');
+  const [partyCouponCode, setPartyCouponCode] = useState<string>('');
+  const [partyCouponDiscount, setPartyCouponDiscount] = useState<number>(0);
+  const [partyAgreeTerms, setPartyAgreeTerms] = useState<boolean>(true);
 
   // Global Submission & Success
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -427,7 +467,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       }
     } else if (activeTab === 'party') {
       if (!partyVenueAddress.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Event Venue Required', text: 'Please enter event address / venue location.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Address Required', text: 'Please enter party venue / complete address.', confirmButtonColor: '#d62423' });
         return;
       }
     }
@@ -435,7 +475,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     setStep(2);
   };
 
-  // Step 2 Validation across tabs
+  // Step 2 Validation
   const handleProceedToStep3 = () => {
     if (activeTab === 'commercial') {
       if (commercialStaffList.length === 0) {
@@ -457,12 +497,12 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         return;
       }
     } else if (activeTab === 'party') {
-      if (partyCuisines.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Cuisine Required', text: 'Please select at least 1 cuisine preference.', confirmButtonColor: '#d62423' });
+      if (partyDatesList.length === 0 || !partyDatesList[0].date) {
+        Swal.fire({ icon: 'warning', title: 'Date Required', text: 'Please select occasion date.', confirmButtonColor: '#d62423' });
         return;
       }
-      if (!partyAgreeTerms) {
-        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the party chef terms.', confirmButtonColor: '#d62423' });
+      if (partyDatesList.some(d => d.meals.length === 0)) {
+        Swal.fire({ icon: 'warning', title: 'Meal Required', text: 'Please select at least 1 meal (Breakfast, Lunch or Dinner).', confirmButtonColor: '#d62423' });
         return;
       }
     }
@@ -470,12 +510,31 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     setStep(3);
   };
 
-  // Daily staff calculations
+  // Step 3 Validation for Party Chef
+  const handleProceedToStep4 = () => {
+    if (activeTab === 'party') {
+      if (!partyGuestCount || parseInt(partyGuestCount) < 1) {
+        Swal.fire({ icon: 'warning', title: 'Guest Count Required', text: 'Please enter the number of guests.', confirmButtonColor: '#d62423' });
+        return;
+      }
+    }
+    setStep(4);
+  };
+
+  // Daily calculations
   const dailyStaffAmount = dailyStaffRequirement.ratePerDay * dailyStaffRequirement.count * dailyStaffRequirement.days;
   const dailyGst = Math.round(dailyStaffAmount * 0.18);
   const dailyPlatformFee = Math.round(dailyStaffAmount * 0.10);
   const dailyTotalAmount = dailyStaffAmount + dailyGst + dailyPlatformFee;
   const dailyAdvanceAmount = Math.round(dailyTotalAmount * 0.25);
+
+  // Party Chef calculations
+  const totalPartyMeals = partyDatesList.reduce((acc, curr) => acc + curr.meals.length, 0);
+  const partyCookingCharges = Math.max(1924, totalPartyMeals * 999);
+  const partyGst = Math.round(partyCookingCharges * 0.18);
+  const partyPlatformFee = Math.round(partyCookingCharges * 0.10);
+  const partyGrandTotal = Math.max(0, partyCookingCharges + partyGst + partyPlatformFee - partyCouponDiscount);
+  const partyAdvanceAmount = Math.round(partyGrandTotal * 0.25);
 
   // Trigger Live Cashfree Checkout
   const handleFinalSubmitAndPay = async () => {
@@ -544,9 +603,9 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         }
       };
     } else if (activeTab === 'party') {
-      amountToPay = 299;
-      sourceType = 'Chef for Party / Occasion (₹299 Allocation Fee)';
-      summaryMessage = `Venue: ${partyVenueAddress}, Occasion: ${partyOccasionType}, Guests: ${partyGuestCount}, Meal: ${partyMealType}, Cuisines: ${partyCuisines.join(', ')}, Date: ${partyDate} at ${partyTime}`;
+      amountToPay = partyAdvanceAmount;
+      sourceType = 'Chef for Party / Occasion (25% Advance Booking)';
+      summaryMessage = `Venue: ${partyVenueAddress}, Occasion: ${partyOccasionType}, Guests: ${partyGuestCount}, Cuisine: ${partySelectedCuisine}, Dates: ${partyDatesList.map(d => `${d.date} (${d.meals.join(', ')})`).join(' | ')}, Total: ₹${partyGrandTotal}, Advance: ₹${partyAdvanceAmount}`;
       requestPayload = {
         jobCategory: 'home',
         bookingType: 'party',
@@ -556,12 +615,21 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         partyRequirement: {
           occasion: partyOccasionType,
           guests: partyGuestCount,
-          mealType: partyMealType,
-          cuisines: partyCuisines,
-          date: partyDate,
-          time: partyTime
+          cuisine: partySelectedCuisine,
+          chooseLater: partyChooseLater,
+          dates: partyDatesList,
+          breakfastMenu: partyBreakfastItems,
+          lunchMenu: partyLunchItems,
+          dinnerMenu: partyDinnerItems
         },
-        pricing: { processingFee: 299, advance: 299 }
+        pricing: {
+          cookingCharges: partyCookingCharges,
+          gst: partyGst,
+          platformFee: partyPlatformFee,
+          discount: partyCouponDiscount,
+          totalAmount: partyGrandTotal,
+          advance: partyAdvanceAmount
+        }
       };
     }
 
@@ -610,7 +678,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
             Swal.fire({
               icon: 'error',
               title: 'Payment Incomplete',
-              text: `Payment was not completed. Please pay ₹${amountToPay} to confirm your request.`,
+              text: `Payment was not completed. Please complete ₹${amountToPay} payment to confirm your request.`,
               confirmButtonColor: '#d62423'
             });
           } else {
@@ -648,6 +716,32 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     }
   };
 
+  // Helper toggle meal on date
+  const handleToggleMeal = (dateId: string, meal: string) => {
+    setPartyDatesList(prev => prev.map(d => {
+      if (d.id === dateId) {
+        const exists = d.meals.includes(meal);
+        const updatedMeals = exists ? d.meals.filter(m => m !== meal) : [...d.meals, meal];
+        return { ...d, meals: updatedMeals };
+      }
+      return d;
+    }));
+  };
+
+  // Helper toggle menu item
+  const handleToggleMenuItem = (mealType: 'breakfast' | 'lunch' | 'dinner', item: string) => {
+    if (mealType === 'breakfast') {
+      setPartyBreakfastItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+    } else if (mealType === 'lunch') {
+      setPartyLunchItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+    } else {
+      setPartyDinnerItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+    }
+  };
+
+  const isPartyTab = activeTab === 'party';
+  const totalPartySteps = isPartyTab ? 5 : 4;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[94vh] flex flex-col font-sans">
@@ -667,7 +761,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
             <span className="text-[22px] font-black text-[#d62423] tracking-tight">Cook</span>
           </div>
           <p className="text-[12px] font-semibold text-slate-400">
-            Hire the right staff for your business
+            {isPartyTab ? 'Book a professional chef for your special occasion' : 'Hire the right staff for your business'}
           </p>
         </div>
 
@@ -736,69 +830,68 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
         {/* Stepper Progress Bar */}
         {!bookingSuccess && (
-          <div className="px-6 py-3.5 bg-white border-b border-slate-100">
-            <div className="flex items-center justify-between max-w-xl mx-auto relative">
-              {/* Step 1 */}
-              <div className="flex items-center gap-2 relative z-10">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  step > 1 ? 'bg-green-500 text-white' : step === 1 ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {step > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
-                </div>
-                <span className={`text-[12px] font-bold hidden sm:inline ${step === 1 ? 'text-[#0866e8]' : 'text-slate-500'}`}>
-                  Basic Details
-                </span>
+          <div className="px-6 py-3 bg-white border-b border-slate-100">
+            {isPartyTab ? (
+              /* 5 Steps for Party */
+              <div className="flex items-center justify-between max-w-2xl mx-auto relative">
+                {[
+                  { num: 1, label: 'Basic Details' },
+                  { num: 2, label: 'Event Details' },
+                  { num: 3, label: 'Menu Details' },
+                  { num: 4, label: 'Booking Summary' },
+                  { num: 5, label: 'Payment' }
+                ].map((s, idx, arr) => (
+                  <React.Fragment key={s.num}>
+                    <div className="flex items-center gap-1.5 relative z-10">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
+                        step > s.num ? 'bg-green-500 text-white' : step === s.num ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                        {step > s.num ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
+                      </div>
+                      <span className={`text-[11.5px] font-bold hidden md:inline ${step === s.num ? 'text-[#0866e8]' : 'text-slate-500'}`}>
+                        {s.label}
+                      </span>
+                    </div>
+                    {idx < arr.length - 1 && (
+                      <div className={`flex-1 h-[2px] mx-1.5 transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
-
-              <div className={`flex-1 h-[2px] mx-2 transition-colors ${step > 1 ? 'bg-green-500' : 'bg-slate-200'}`} />
-
-              {/* Step 2 */}
-              <div className="flex items-center gap-2 relative z-10">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  step > 2 ? 'bg-green-500 text-white' : step === 2 ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {step > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
-                </div>
-                <span className={`text-[12px] font-bold hidden sm:inline ${step === 2 ? 'text-[#0866e8]' : 'text-slate-500'}`}>
-                  {activeTab === 'commercial' ? 'Staff Requirement' : activeTab === 'homecook' ? 'Cook Details' : activeTab === 'daily' ? 'Staff Requirement' : 'Party Details'}
-                </span>
+            ) : (
+              /* 4 Steps for Commercial / Home / Daily */
+              <div className="flex items-center justify-between max-w-xl mx-auto relative">
+                {[
+                  { num: 1, label: 'Basic Details' },
+                  { num: 2, label: activeTab === 'commercial' ? 'Staff Requirement' : activeTab === 'homecook' ? 'Cook Details' : 'Staff Requirement' },
+                  { num: 3, label: 'Booking Summary' },
+                  { num: 4, label: activeTab === 'daily' ? 'Advance Payment' : 'Processing Fee' }
+                ].map((s, idx, arr) => (
+                  <React.Fragment key={s.num}>
+                    <div className="flex items-center gap-2 relative z-10">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                        step > s.num ? 'bg-green-500 text-white' : step === s.num ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                        {step > s.num ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+                      </div>
+                      <span className={`text-[12px] font-bold hidden sm:inline ${step === s.num ? 'text-[#0866e8]' : 'text-slate-500'}`}>
+                        {s.label}
+                      </span>
+                    </div>
+                    {idx < arr.length - 1 && (
+                      <div className={`flex-1 h-[2px] mx-2 transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
-
-              <div className={`flex-1 h-[2px] mx-2 transition-colors ${step > 2 ? 'bg-green-500' : 'bg-slate-200'}`} />
-
-              {/* Step 3 */}
-              <div className="flex items-center gap-2 relative z-10">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  step > 3 ? 'bg-green-500 text-white' : step === 3 ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {step > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
-                </div>
-                <span className={`text-[12px] font-bold hidden sm:inline ${step === 3 ? 'text-[#0866e8]' : 'text-slate-500'}`}>
-                  Booking Summary
-                </span>
-              </div>
-
-              <div className={`flex-1 h-[2px] mx-2 transition-colors ${step > 3 ? 'bg-green-500' : 'bg-slate-200'}`} />
-
-              {/* Step 4 */}
-              <div className="flex items-center gap-2 relative z-10">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  step === 4 ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  4
-                </div>
-                <span className={`text-[12px] font-bold hidden sm:inline ${step === 4 ? 'text-[#0866e8]' : 'text-slate-500'}`}>
-                  {activeTab === 'daily' ? 'Advance Payment' : 'Processing Fee'}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* Modal Scrollable Body */}
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-slate-800">
 
-          {/* ================= STEP 1: Basic Details (Dynamic by Tab) ================= */}
+          {/* ================= STEP 1: Basic Details ================= */}
           {step === 1 && !bookingSuccess && (
             <div className="space-y-4 animate-in fade-in">
               <div>
@@ -806,24 +899,21 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                   Basic Details
                 </h2>
                 <p className="text-[12.5px] text-slate-500 mt-0.5">
-                  {activeTab === 'commercial' && 'Please enter your business details to get started.'}
-                  {activeTab === 'homecook' && 'Please enter your contact & residential details.'}
-                  {activeTab === 'daily' && 'Please enter your outlet / event location details.'}
-                  {activeTab === 'party' && 'Please enter your party venue & contact details.'}
+                  {isPartyTab ? 'Enter your details to start your booking.' : 'Please enter your contact details to get started.'}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Your Name */}
+              <div className="space-y-3.5">
+                {/* Name */}
                 <div>
                   <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                    Your Name <span className="text-red-500">*</span>
+                    Name <span className="text-red-500">*</span>
                   </label>
                   <input 
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your name"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
                   />
                 </div>
@@ -868,47 +958,43 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Inline OTP Box */}
-              {otpSent && !isPhoneVerified && (
-                <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[12px] font-bold text-[#0866e8]">
-                      Enter 6-Digit Verification Code:
-                    </span>
-                    {timer > 0 ? (
-                      <span className="text-[11px] text-slate-500 font-medium">Resend in {timer}s</span>
-                    ) : (
-                      <button type="button" onClick={handleSendOtp} className="text-[11px] font-bold text-[#d62423] hover:underline">
-                        Resend OTP
+                {/* Inline OTP Box */}
+                {otpSent && !isPhoneVerified && (
+                  <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[12px] font-bold text-[#0866e8]">Enter 6-Digit Verification Code:</span>
+                      {timer > 0 ? (
+                        <span className="text-[11px] text-slate-500 font-medium">Resend in {timer}s</span>
+                      ) : (
+                        <button type="button" onClick={handleSendOtp} className="text-[11px] font-bold text-[#d62423] hover:underline">
+                          Resend OTP
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text"
+                        maxLength={6}
+                        value={otpValue}
+                        onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Enter OTP"
+                        className="flex-1 px-3 py-2 rounded-lg bg-white border border-blue-200 focus:border-[#0866e8] outline-none text-center font-bold tracking-widest text-[15px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        disabled={isVerifyingOtp || otpValue.length < 4}
+                        className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-bold text-[12.5px] rounded-lg transition-colors flex items-center gap-1.5"
+                      >
+                        {isVerifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
                       </button>
-                    )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text"
-                      maxLength={6}
-                      value={otpValue}
-                      onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
-                      placeholder="Enter OTP"
-                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-blue-200 focus:border-[#0866e8] outline-none text-center font-bold tracking-widest text-[15px]"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={isVerifyingOtp || otpValue.length < 4}
-                      className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-bold text-[12.5px] rounded-lg transition-colors flex items-center gap-1.5"
-                    >
-                      {isVerifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Tab-Specific Form Fields */}
-              {activeTab === 'commercial' && (
-                <>
+                {/* Tab Specific Fields in Step 1 */}
+                {activeTab === 'commercial' && (
                   <div>
                     <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
                       Business Name <span className="text-red-500">*</span>
@@ -921,38 +1007,9 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                      Business Address <span className="text-red-500">*</span>
-                    </label>
-                    <textarea 
-                      rows={2}
-                      value={commercialAddress}
-                      onChange={(e) => setCommercialAddress(e.target.value)}
-                      placeholder="Enter complete business address"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
-                    />
-                  </div>
-                </>
-              )}
+                )}
 
-              {activeTab === 'homecook' && (
-                <div>
-                  <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                    Home Address <span className="text-red-500">*</span>
-                  </label>
-                  <textarea 
-                    rows={3}
-                    value={homeAddress}
-                    onChange={(e) => setHomeAddress(e.target.value)}
-                    placeholder="Enter complete residential address, flat/house number & landmark"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
-                  />
-                </div>
-              )}
-
-              {activeTab === 'daily' && (
-                <>
+                {activeTab === 'daily' && (
                   <div>
                     <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
                       Outlet / Event Name <span className="text-red-500">*</span>
@@ -965,55 +1022,144 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                      Address / Venue Location <span className="text-red-500">*</span>
-                    </label>
-                    <textarea 
-                      rows={2}
-                      value={dailyAddress}
-                      onChange={(e) => setDailyAddress(e.target.value)}
-                      placeholder="Enter complete venue or outlet address"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
-                    />
-                  </div>
-                </>
-              )}
+                )}
 
-              {activeTab === 'party' && (
+                {/* Address Field */}
                 <div>
                   <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                    Party Venue / House Location <span className="text-red-500">*</span>
+                    Address <span className="text-red-500">*</span>
                   </label>
                   <textarea 
                     rows={3}
-                    value={partyVenueAddress}
-                    onChange={(e) => setPartyVenueAddress(e.target.value)}
-                    placeholder="Enter full party location address, apartment name, floor & city"
+                    value={activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : activeTab === 'daily' ? dailyAddress : partyVenueAddress}
+                    onChange={(e) => {
+                      if (activeTab === 'commercial') setCommercialAddress(e.target.value);
+                      else if (activeTab === 'homecook') setHomeAddress(e.target.value);
+                      else if (activeTab === 'daily') setDailyAddress(e.target.value);
+                      else setPartyVenueAddress(e.target.value);
+                    }}
+                    placeholder="Enter complete address"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
                   />
                 </div>
-              )}
+              </div>
 
               {/* Next Button */}
               <div className="pt-2 flex justify-end">
                 <button
                   type="button"
                   onClick={handleProceedToStep2}
-                  className="inline-flex items-center gap-2 bg-[#d62423] hover:bg-[#b81d1c] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(214,36,35,0.3)] transition-all transform hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 bg-[#0866e8] hover:bg-[#0652ba] text-white px-8 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all transform hover:-translate-y-0.5"
                 >
-                  <span>Proceed to Next</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Continue →</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* ================= STEP 2: Requirement Selection ================= */}
+          {/* ================= STEP 2: Event Details (Party) / Requirements ================= */}
           {step === 2 && !bookingSuccess && (
             <div className="space-y-4 animate-in fade-in">
-              {/* TAB 1: Commercial Requirement */}
-              {activeTab === 'commercial' && (
+              {/* TAB 4: Chef for Party -> Step 2: Event Details */}
+              {isPartyTab ? (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Event Details</h2>
+                    <p className="text-[12.5px] text-slate-500">
+                      Select the occasion date first, then choose the meal for that date. You can add multiple dates.
+                    </p>
+                  </div>
+
+                  {/* Occasion Dates List */}
+                  <div className="space-y-3">
+                    {partyDatesList.map((dItem, index) => (
+                      <div key={dItem.id} className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2 text-[13px] font-bold text-[#0866e8]">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#0866e8]"></span>
+                            Occasion Date {index + 1}
+                          </span>
+                          {partyDatesList.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setPartyDatesList(prev => prev.filter(p => p.id !== dItem.id))}
+                              className="text-xs text-red-500 hover:underline flex items-center gap-1 font-semibold"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Remove
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                            Select Date <span className="text-red-500">*</span>
+                          </label>
+                          <input 
+                            type="date"
+                            value={dItem.date}
+                            onChange={(e) => setPartyDatesList(prev => prev.map(p => p.id === dItem.id ? { ...p, date: e.target.value } : p))}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 outline-none focus:border-[#0866e8]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                            Select Meal <span className="text-red-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {['Breakfast', 'Lunch', 'Dinner'].map(meal => {
+                              const isSelected = dItem.meals.includes(meal);
+                              return (
+                                <button
+                                  key={meal}
+                                  type="button"
+                                  onClick={() => handleToggleMeal(dItem.id, meal)}
+                                  className={`py-2 px-3 rounded-xl border font-bold text-[12.5px] transition-all text-center ${
+                                    isSelected
+                                      ? 'border-[#0866e8] bg-blue-50/70 text-[#0866e8]'
+                                      : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                                  }`}
+                                >
+                                  {meal}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add More Date Button */}
+                  <button
+                    type="button"
+                    onClick={() => setPartyDatesList(prev => [...prev, { id: Date.now().toString(), date: '', meals: ['Dinner'] }])}
+                    className="w-full py-2.5 border-2 border-dashed border-blue-300 text-[#0866e8] bg-blue-50/40 hover:bg-blue-50 font-bold text-[13px] rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> + Add More Date
+                  </button>
+
+                  {/* Occasion Type Dropdown */}
+                  <div>
+                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
+                      Occasion Type <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      value={partyOccasionType}
+                      onChange={(e) => setPartyOccasionType(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 outline-none focus:border-[#0866e8]"
+                    >
+                      {occasionTypes.map(occ => (
+                        <option key={occ} value={occ}>{occ}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      You can add as many occasion dates as required. Each date can have one or more meals.
+                    </p>
+                  </div>
+                </div>
+              ) : activeTab === 'commercial' ? (
+                /* TAB 1: Commercial Requirement */
                 <>
                   <div className="flex items-center justify-between">
                     <div>
@@ -1117,17 +1263,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     <span>I confirm standard hospitality work policies (weekly off & verified salary payout).</span>
                   </label>
                 </>
-              )}
-
-              {/* TAB 2: Home Cook Requirement */}
-              {activeTab === 'homecook' && (
+              ) : activeTab === 'homecook' ? (
+                /* TAB 2: Home Cook Requirement */
                 <div className="space-y-3.5">
                   <div>
                     <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Home Cook Requirements</h2>
                     <p className="text-[12.5px] text-slate-500">Choose the type of cook and preferences for your household.</p>
                   </div>
 
-                  {/* Cook Level Selection */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {cookLevels.map(lvl => (
                       <div
@@ -1203,10 +1346,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     <span>I agree to ₹299 verification & matching fee with free candidate replacement support.</span>
                   </label>
                 </div>
-              )}
-
-              {/* TAB 3: Daily Basis Requirement */}
-              {activeTab === 'daily' && (
+              ) : (
+                /* TAB 3: Daily Basis Requirement */
                 <div className="space-y-3.5">
                   <div>
                     <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Daily Staff Requirement</h2>
@@ -1257,7 +1398,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     </div>
 
                     <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Event / Shift Date</label>
+                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Event Date</label>
                       <input 
                         type="date"
                         value={dailyStaffRequirement.startDate}
@@ -1299,111 +1440,6 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                 </div>
               )}
 
-              {/* TAB 4: Chef for Party Requirement */}
-              {activeTab === 'party' && (
-                <div className="space-y-3.5">
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Party & Event Chef Details</h2>
-                    <p className="text-[12.5px] text-slate-500">Select occasion type, guest estimate and cuisine preferences.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Occasion Type</label>
-                      <select 
-                        value={partyOccasionType}
-                        onChange={(e) => setPartyOccasionType(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        {occasionTypes.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Estimated Guests</label>
-                      <select 
-                        value={partyGuestCount}
-                        onChange={(e) => setPartyGuestCount(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        {guestCounts.map(g => <option key={g} value={g}>{g}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Meal Service</label>
-                      <select 
-                        value={partyMealType}
-                        onChange={(e) => setPartyMealType(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        <option value="Dinner">Dinner</option>
-                        <option value="Lunch">Lunch</option>
-                        <option value="High Tea & Snacks">High Tea & Snacks</option>
-                        <option value="Full Day (Lunch + Dinner)">Full Day (Lunch + Dinner)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Party Date</label>
-                      <input 
-                        type="date"
-                        value={partyDate}
-                        onChange={(e) => setPartyDate(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Serving Time</label>
-                      <input 
-                        type="time"
-                        value={partyTime}
-                        onChange={(e) => setPartyTime(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cuisines Checkboxes */}
-                  <div>
-                    <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Select Cuisines (Select all that apply)</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {cuisineOptions.map(c => {
-                        const isSelected = partyCuisines.includes(c);
-                        return (
-                          <div
-                            key={c}
-                            onClick={() => {
-                              if (isSelected) {
-                                setPartyCuisines(prev => prev.filter(item => item !== c));
-                              } else {
-                                setPartyCuisines(prev => [...prev, c]);
-                              }
-                            }}
-                            className={`px-2.5 py-1.5 rounded-lg border text-[11.5px] font-semibold cursor-pointer text-center transition-all ${
-                              isSelected ? 'bg-purple-50 text-[#7639e8] border-[#7639e8]' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            {c}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-2 text-[12px] text-slate-600 cursor-pointer pt-1">
-                    <input 
-                      type="checkbox"
-                      checked={partyAgreeTerms}
-                      onChange={(e) => setPartyAgreeTerms(e.target.checked)}
-                      className="w-4 h-4 text-[#0866e8] rounded mt-0.5"
-                    />
-                    <span>I confirm booking of dedicated Master Chef for my occasion with complete ingredient guidance.</span>
-                  </label>
-                </div>
-              )}
-
               {/* Back & Next Navigation */}
               <div className="pt-3 flex items-center justify-between border-t border-slate-100">
                 <button
@@ -1416,230 +1452,564 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                 <button
                   type="button"
                   onClick={handleProceedToStep3}
-                  className="inline-flex items-center gap-1.5 bg-[#d62423] hover:bg-[#b81d1c] text-white px-6 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(214,36,35,0.3)] transition-all"
+                  className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
                 >
-                  <span>Review Booking</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Continue →</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* ================= STEP 3: Booking Summary ================= */}
+          {/* ================= STEP 3: Menu Details (For Party) OR Booking Summary (For others) ================= */}
           {step === 3 && !bookingSuccess && (
             <div className="space-y-4 animate-in fade-in">
+              {isPartyTab ? (
+                /* TAB 4 (Party Chef) -> Step 3: Menu Details */
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Menu Details</h2>
+                    <p className="text-[12.5px] text-slate-500">Select your preferred cuisine and menu.</p>
+                  </div>
+
+                  {/* Choose Cuisine */}
+                  <div>
+                    <label className="block text-[12.5px] font-bold text-slate-700 mb-2">
+                      Choose Cuisine <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {partyCuisinesList.map(c => {
+                        const isSelected = partySelectedCuisine === c;
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setPartySelectedCuisine(c)}
+                            className={`py-2 px-3 rounded-xl border font-bold text-[12.5px] transition-all text-center ${
+                              isSelected
+                                ? 'border-[#0866e8] bg-blue-50/80 text-[#0866e8]'
+                                : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            {c}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Choose Menu Later Checkbox Banner */}
+                  <div 
+                    onClick={() => setPartyChooseLater(!partyChooseLater)}
+                    className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                      partyChooseLater ? 'border-[#0866e8] bg-blue-50/50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <input 
+                        type="checkbox" 
+                        checked={partyChooseLater}
+                        onChange={() => {}} 
+                        className="w-4 h-4 text-[#0866e8] rounded mt-0.5 pointer-events-none"
+                      />
+                      <div>
+                        <strong className="text-[13px] text-slate-900 block">I'll choose menu later</strong>
+                        <p className="text-[11.5px] text-slate-500 mt-0.5 leading-relaxed">
+                          You don't need to finalize your menu right now. After booking, you will get an option to choose or upload your own menu from your Booking Dashboard.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* If NOT Choose Later -> Show Meal Options */}
+                  {!partyChooseLater && (
+                    <div className="space-y-3.5 pt-1">
+                      {/* Breakfast Items */}
+                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+                        <span className="text-[12.5px] font-bold text-[#0866e8] block">Date 1 — Breakfast</span>
+                        <p className="text-[11px] text-slate-500">Select the menu items for this meal.</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                          {breakfastMenuOptions.map(item => {
+                            const isSelected = partyBreakfastItems.includes(item);
+                            return (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() => handleToggleMenuItem('breakfast', item)}
+                                className={`py-1.5 px-2.5 rounded-lg border text-[11.5px] font-semibold text-center transition-all ${
+                                  isSelected ? 'border-[#0866e8] bg-[#0866e8] text-white shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                {item}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Lunch Items */}
+                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+                        <span className="text-[12.5px] font-bold text-[#0866e8] block">Date 1 — Lunch</span>
+                        <p className="text-[11px] text-slate-500">Select the menu items for this meal.</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                          {lunchMenuOptions.map(item => {
+                            const isSelected = partyLunchItems.includes(item);
+                            return (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() => handleToggleMenuItem('lunch', item)}
+                                className={`py-1.5 px-2.5 rounded-lg border text-[11.5px] font-semibold text-center transition-all ${
+                                  isSelected ? 'border-[#0866e8] bg-[#0866e8] text-white shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                {item}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Dinner Items */}
+                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+                        <span className="text-[12.5px] font-bold text-[#0866e8] block">Date 1 — Dinner</span>
+                        <p className="text-[11px] text-slate-500">Select the menu items for this meal.</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                          {dinnerMenuOptions.map(item => {
+                            const isSelected = partyDinnerItems.includes(item);
+                            return (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() => handleToggleMenuItem('dinner', item)}
+                                className={`py-1.5 px-2.5 rounded-lg border text-[11.5px] font-semibold text-center transition-all ${
+                                  isSelected ? 'border-[#0866e8] bg-[#0866e8] text-white shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                {item}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No. of Guests */}
+                  <div>
+                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
+                      No. of Guests <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="number"
+                      min={1}
+                      max={1000}
+                      value={partyGuestCount}
+                      onChange={(e) => setPartyGuestCount(e.target.value)}
+                      placeholder="Enter number of guests"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-bold text-slate-800 outline-none focus:border-[#0866e8]"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Your final menu can be selected or uploaded after booking from your Booking Dashboard.
+                    </p>
+                  </div>
+
+                  {/* Back & Next Navigation */}
+                  <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleProceedToStep4}
+                      className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                    >
+                      <span>Continue →</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Non-Party Step 3: Booking Summary */
+                <>
+                  <div>
+                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
+                    <p className="text-[12.5px] text-slate-500">Review your requirement and amount before payment.</p>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[12.5px] space-y-1">
+                    <div className="font-bold text-slate-900 mb-1">Customer & Location Details</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
+                      <div><strong className="text-slate-800">Name:</strong> {name}</div>
+                      <div><strong className="text-slate-800">Mobile:</strong> +91 {phone}</div>
+                      {activeTab === 'commercial' && <div><strong className="text-slate-800">Business:</strong> {commercialBusinessName}</div>}
+                      {activeTab === 'daily' && <div><strong className="text-slate-800">Outlet/Event:</strong> {dailyOutletName}</div>}
+                      <div className="sm:col-span-2">
+                        <strong className="text-slate-800">Address:</strong>{' '}
+                        {activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : dailyAddress}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-white rounded-xl border border-slate-200 text-[12.5px]">
+                    <div className="font-bold text-slate-900 mb-2">Requirement Summary</div>
+
+                    {activeTab === 'commercial' && (
+                      <div className="space-y-1.5">
+                        {commercialStaffList.map((s, i) => (
+                          <div key={i} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-none">
+                            <span className="font-semibold text-slate-800">{s.staffCategory} ({s.serviceCategory})</span>
+                            <span className="font-bold text-slate-900">Qty: {s.noOfStaff} • {s.salaryRange}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeTab === 'homecook' && (
+                      <div className="grid grid-cols-2 gap-2 text-slate-600">
+                        <div><strong className="text-slate-800">Cook Level:</strong> {cookLevels.find(c => c.id === homeCookLevel)?.name}</div>
+                        <div><strong className="text-slate-800">Preference:</strong> {homeFoodPref}</div>
+                        <div><strong className="text-slate-800">Timing:</strong> {homeDuration}</div>
+                        <div><strong className="text-slate-800">Start Date:</strong> {homeStartDate}</div>
+                      </div>
+                    )}
+
+                    {activeTab === 'daily' && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-[12px]">
+                          <thead>
+                            <tr className="border-b border-slate-200 text-slate-500 font-bold">
+                              <th className="pb-1">Role</th>
+                              <th className="pb-1">Rate/Day</th>
+                              <th className="pb-1">Count</th>
+                              <th className="pb-1">Days</th>
+                              <th className="pb-1 text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="py-1 font-bold text-slate-800">{dailyStaffRequirement.role}</td>
+                              <td className="py-1">₹{dailyStaffRequirement.ratePerDay}</td>
+                              <td className="py-1">{dailyStaffRequirement.count}</td>
+                              <td className="py-1">{dailyStaffRequirement.days}</td>
+                              <td className="py-1 text-right font-bold text-slate-900">₹{dailyStaffAmount}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-[13px] space-y-1.5">
+                    {activeTab === 'daily' ? (
+                      <>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Staff Charges</span>
+                          <span>₹{dailyStaffAmount}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>GST (18%)</span>
+                          <span>₹{dailyGst}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Platform Fee (10%)</span>
+                          <span>₹{dailyPlatformFee}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-blue-200">
+                          <span>Total Amount</span>
+                          <span>₹{dailyTotalAmount}</span>
+                        </div>
+                        <div className="flex justify-between font-extrabold text-[#0866e8] text-[15px] pt-0.5">
+                          <span>25% Advance Payable</span>
+                          <span>₹{dailyAdvanceAmount}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Staff Requirement Verification & Matching Fee</span>
+                          <span>₹299</span>
+                        </div>
+                        <div className="flex justify-between font-extrabold text-[#0866e8] text-[15px] pt-1 border-t border-blue-200">
+                          <span>Payable Now</span>
+                          <span>₹299</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(4)}
+                      className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                    >
+                      <span>Proceed to Payment →</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ================= STEP 4: Booking Summary (For Party) OR Payment (For others) ================= */}
+          {step === 4 && !bookingSuccess && (
+            <div className="space-y-4 animate-in fade-in">
+              {isPartyTab ? (
+                /* TAB 4: Chef for Party -> Step 4: Booking Summary (Matching Screenshot 4) */
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
+                    <p className="text-[12.5px] text-slate-500">Review your event details before payment.</p>
+                  </div>
+
+                  {/* Customer summary box */}
+                  <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 text-[12.5px] space-y-1.5">
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-500 font-medium">Customer</span>
+                      <strong className="text-slate-900">{name}</strong>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-500 font-medium">Mobile</span>
+                      <strong className="text-slate-900">{phone}</strong>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-500 font-medium">Occasion</span>
+                      <strong className="text-slate-900">{partyOccasionType}</strong>
+                    </div>
+                  </div>
+
+                  {/* Meal Cards breakdown */}
+                  <div className="space-y-2.5 max-h-[36vh] overflow-y-auto pr-1">
+                    {partyDatesList.map((dItem) => (
+                      <React.Fragment key={dItem.id}>
+                        {dItem.meals.map(meal => (
+                          <div key={meal} className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
+                            <span className="font-bold text-[12.5px] text-[#0866e8] block">
+                              {dItem.date || 'Selected Date'} — {meal}
+                            </span>
+                            <div className="flex justify-between text-[12px]">
+                              <span className="text-slate-500">Cuisine</span>
+                              <strong className="text-slate-800">{partySelectedCuisine}</strong>
+                            </div>
+                            <div className="flex justify-between text-[12px]">
+                              <span className="text-slate-500">Guests</span>
+                              <strong className="text-slate-800">{partyGuestCount}</strong>
+                            </div>
+                            <div className="text-[12px] pt-1 border-t border-slate-100">
+                              <span className="text-slate-500 block mb-1">Selected Menu</span>
+                              {partyChooseLater ? (
+                                <span className="text-slate-600 font-medium italic">To be chosen later from Booking Dashboard</span>
+                              ) : (
+                                <div className="space-y-0.5 pl-2 font-medium text-slate-800">
+                                  {(meal === 'Breakfast' ? partyBreakfastItems : meal === 'Lunch' ? partyLunchItems : partyDinnerItems).map(item => (
+                                    <div key={item}>• {item}</div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* Back & Next Navigation */}
+                  <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(5)}
+                      className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                    >
+                      <span>Proceed to Payment →</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Non-Party Step 4: Payment Confirmation */
+                <div className="space-y-4 animate-in fade-in text-center max-w-md mx-auto py-2">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-[#0866e8] flex items-center justify-center mx-auto shadow-sm">
+                    <IndianRupee className="w-6 h-6" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-[20px] font-black text-[#0f2441] tracking-tight">Confirm Your Booking</h2>
+                    <p className="text-[12.5px] text-slate-500 mt-1">
+                      {activeTab === 'daily'
+                        ? `Pay ₹${dailyAdvanceAmount} (25% advance) to secure your daily staff requirement.`
+                        : 'Pay ₹299 processing fee to confirm your requirement.'}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/40 rounded-2xl border border-blue-100 text-center">
+                    <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {activeTab === 'daily' ? '25% Booking Advance' : 'Processing Fee'}
+                    </span>
+                    <span className="text-[32px] font-black text-[#0866e8] tracking-tight block">
+                      ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'}
+                    </span>
+                    <span className="text-[11.5px] text-slate-500 block mt-1">
+                      Your booking will be processed immediately upon payment.
+                    </span>
+                  </div>
+
+                  <div className="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-1.5 text-[12px] font-semibold text-slate-600">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <Check className="w-4 h-4 stroke-[3]" />
+                      <span>Instant requirement verification & candidate mapping</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-green-700">
+                      <Check className="w-4 h-4 stroke-[3]" />
+                      <span>Free replacement support within contract validity</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-green-700">
+                      <Check className="w-4 h-4 stroke-[3]" />
+                      <span>Dedicated ZomoCook support manager</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleFinalSubmitAndPay}
+                    disabled={isSubmitting}
+                    className="w-full bg-[#0866e8] hover:bg-[#0652ba] disabled:bg-slate-300 text-white py-3 rounded-xl font-extrabold text-[15px] shadow-[0_6px_20px_rgba(8,102,232,0.35)] transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Connecting Payment Gateway...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Pay ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'} & Confirm</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    className="text-[12.5px] font-bold text-slate-500 hover:text-slate-800"
+                  >
+                    ← Back to Summary
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ================= STEP 5: Payment (For Party Chef Matching Screenshot 5) ================= */}
+          {step === 5 && !bookingSuccess && isPartyTab && (
+            <div className="space-y-4 animate-in fade-in">
               <div>
-                <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
-                <p className="text-[12.5px] text-slate-500">Review your requirement and amount before payment.</p>
+                <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Payment</h2>
+                <p className="text-[12.5px] text-slate-500">Review your booking amount and confirm your booking.</p>
               </div>
 
-              {/* Customer Details Box */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[12.5px] space-y-1">
-                <div className="font-bold text-slate-900 mb-1">Customer & Location Details</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
-                  <div><strong className="text-slate-800">Name:</strong> {name}</div>
-                  <div><strong className="text-slate-800">Mobile:</strong> +91 {phone}</div>
-                  {activeTab === 'commercial' && <div><strong className="text-slate-800">Business:</strong> {commercialBusinessName}</div>}
-                  {activeTab === 'daily' && <div><strong className="text-slate-800">Outlet/Event:</strong> {dailyOutletName}</div>}
-                  <div className="sm:col-span-2">
-                    <strong className="text-slate-800">Address:</strong>{' '}
-                    {activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : activeTab === 'daily' ? dailyAddress : partyVenueAddress}
+              {/* Price Calculation Box */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-[13px] space-y-2">
+                <div className="flex justify-between text-slate-600">
+                  <span>Cooking Charges</span>
+                  <strong className="text-slate-900">₹{partyCookingCharges.toLocaleString()}</strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>GST (18%)</span>
+                  <strong className="text-slate-900">₹{partyGst.toLocaleString()}</strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Platform Fee (10%)</span>
+                  <strong className="text-slate-900">₹{partyPlatformFee.toLocaleString()}</strong>
+                </div>
+                {partyCouponDiscount > 0 && (
+                  <div className="flex justify-between text-green-600 font-bold">
+                    <span>Offer / Coupon Discount</span>
+                    <span>-₹{partyCouponDiscount.toLocaleString()}</span>
                   </div>
+                )}
+                <div className="flex justify-between font-extrabold text-slate-900 pt-2 border-t border-slate-200 text-[14px]">
+                  <span>Grand Total</span>
+                  <span>₹{partyGrandTotal.toLocaleString()}</span>
                 </div>
               </div>
 
-              {/* Requirement Summary Box */}
-              <div className="p-3.5 bg-white rounded-xl border border-slate-200 text-[12.5px]">
-                <div className="font-bold text-slate-900 mb-2">Requirement Summary</div>
-
-                {activeTab === 'commercial' && (
-                  <div className="space-y-1.5">
-                    {commercialStaffList.map((s, i) => (
-                      <div key={i} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-none">
-                        <span className="font-semibold text-slate-800">{s.staffCategory} ({s.serviceCategory})</span>
-                        <span className="font-bold text-slate-900">Qty: {s.noOfStaff} • {s.salaryRange}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {activeTab === 'homecook' && (
-                  <div className="grid grid-cols-2 gap-2 text-slate-600">
-                    <div><strong className="text-slate-800">Cook Level:</strong> {cookLevels.find(c => c.id === homeCookLevel)?.name}</div>
-                    <div><strong className="text-slate-800">Preference:</strong> {homeFoodPref}</div>
-                    <div><strong className="text-slate-800">Timing:</strong> {homeDuration}</div>
-                    <div><strong className="text-slate-800">Start Date:</strong> {homeStartDate}</div>
-                  </div>
-                )}
-
-                {activeTab === 'daily' && (
-                  <div className="space-y-2">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-[12px]">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-slate-500 font-bold">
-                            <th className="pb-1">Role</th>
-                            <th className="pb-1">Rate/Day</th>
-                            <th className="pb-1">Count</th>
-                            <th className="pb-1">Days</th>
-                            <th className="pb-1 text-right">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="py-1 font-bold text-slate-800">{dailyStaffRequirement.role}</td>
-                            <td className="py-1">₹{dailyStaffRequirement.ratePerDay}</td>
-                            <td className="py-1">{dailyStaffRequirement.count}</td>
-                            <td className="py-1">{dailyStaffRequirement.days}</td>
-                            <td className="py-1 text-right font-bold text-slate-900">₹{dailyStaffAmount}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'party' && (
-                  <div className="grid grid-cols-2 gap-2 text-slate-600">
-                    <div><strong className="text-slate-800">Occasion:</strong> {partyOccasionType}</div>
-                    <div><strong className="text-slate-800">Guests:</strong> {partyGuestCount}</div>
-                    <div><strong className="text-slate-800">Meal:</strong> {partyMealType}</div>
-                    <div><strong className="text-slate-800">Date & Time:</strong> {partyDate} at {partyTime}</div>
-                    <div className="col-span-2"><strong className="text-slate-800">Cuisines:</strong> {partyCuisines.join(', ')}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Price Breakdown Box */}
-              <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-[13px] space-y-1.5">
-                {activeTab === 'daily' ? (
-                  <>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Staff Charges</span>
-                      <span>₹{dailyStaffAmount}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>GST (18%)</span>
-                      <span>₹{dailyGst}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Platform Fee (10%)</span>
-                      <span>₹{dailyPlatformFee}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-blue-200">
-                      <span>Total Amount</span>
-                      <span>₹{dailyTotalAmount}</span>
-                    </div>
-                    <div className="flex justify-between font-extrabold text-[#0866e8] text-[15px] pt-0.5">
-                      <span>25% Advance Payable</span>
-                      <span>₹{dailyAdvanceAmount}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Staff Requirement Verification & Matching Fee</span>
-                      <span>₹299</span>
-                    </div>
-                    <div className="flex justify-between font-extrabold text-[#0866e8] text-[15px] pt-1 border-t border-blue-200">
-                      <span>Payable Now</span>
-                      <span>₹299</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Back & Pay Navigation */}
-              <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+              {/* Coupon Box */}
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  value={partyCouponCode}
+                  onChange={(e) => setPartyCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Enter coupon code"
+                  className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium outline-none focus:border-[#0866e8]"
+                />
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => {
+                    if (partyCouponCode === 'ZOMO10' || partyCouponCode === 'PARTY50') {
+                      setPartyCouponDiscount(200);
+                      Swal.fire({ icon: 'success', title: 'Coupon Applied!', text: '₹200 discount applied.', timer: 1500, showConfirmButton: false });
+                    } else if (partyCouponCode.trim()) {
+                      Swal.fire({ icon: 'info', title: 'Invalid Coupon', text: 'Coupon code not applicable.', confirmButtonColor: '#0866e8' });
+                    }
+                  }}
+                  className="px-5 py-2 bg-[#0866e8] hover:bg-[#0652ba] text-white font-bold text-[13px] rounded-xl transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {/* 25% Advance Highlight Box */}
+              <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/60 flex items-center justify-between">
+                <span className="font-bold text-slate-800 text-[13.5px]">25% Advance to Book</span>
+                <span className="font-black text-[#0866e8] text-[20px]">₹{partyAdvanceAmount.toLocaleString()}</span>
+              </div>
+
+              {/* Terms Checkbox */}
+              <label className="flex items-start gap-2 text-[12px] text-slate-600 cursor-pointer pt-1">
+                <input 
+                  type="checkbox"
+                  checked={partyAgreeTerms}
+                  onChange={(e) => setPartyAgreeTerms(e.target.checked)}
+                  className="w-4 h-4 text-[#0866e8] rounded mt-0.5"
+                />
+                <span>I confirm that the above booking details are correct and agree to proceed with the booking and payment.</span>
+              </label>
+
+              {/* Back & Pay Button */}
+              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setStep(4)}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
                 >
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep(4)}
-                  className="inline-flex items-center gap-1.5 bg-[#d62423] hover:bg-[#b81d1c] text-white px-6 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(214,36,35,0.3)] transition-all"
+                  onClick={handleFinalSubmitAndPay}
+                  disabled={isSubmitting || !partyAgreeTerms}
+                  className="inline-flex items-center gap-2 bg-[#0866e8] hover:bg-[#0652ba] disabled:bg-slate-300 text-white px-7 py-2.5 rounded-xl font-extrabold text-[14px] shadow-[0_4px_14px_rgba(8,102,232,0.35)] transition-all"
                 >
-                  <span>Proceed to Payment</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  <span>Pay 25% Advance & Confirm</span>
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* ================= STEP 4: Payment Confirmation ================= */}
-          {step === 4 && !bookingSuccess && (
-            <div className="space-y-4 animate-in fade-in text-center max-w-md mx-auto py-2">
-              <div className="w-12 h-12 rounded-full bg-blue-100 text-[#0866e8] flex items-center justify-center mx-auto shadow-sm">
-                <IndianRupee className="w-6 h-6" />
-              </div>
-
-              <div>
-                <h2 className="text-[20px] font-black text-[#0f2441] tracking-tight">Confirm Your Booking</h2>
-                <p className="text-[12.5px] text-slate-500 mt-1">
-                  {activeTab === 'daily'
-                    ? `Pay ₹${dailyAdvanceAmount} (25% advance) to secure your daily staff requirement.`
-                    : 'Pay ₹299 processing fee to confirm your requirement.'}
-                </p>
-              </div>
-
-              <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/40 rounded-2xl border border-blue-100 text-center">
-                <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {activeTab === 'daily' ? '25% Booking Advance' : 'Processing Fee'}
-                </span>
-                <span className="text-[32px] font-black text-[#0866e8] tracking-tight block">
-                  ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'}
-                </span>
-                <span className="text-[11.5px] text-slate-500 block mt-1">
-                  Your booking will be processed immediately upon payment.
-                </span>
-              </div>
-
-              <div className="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-1.5 text-[12px] font-semibold text-slate-600">
-                <div className="flex items-center gap-2 text-green-700">
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Instant requirement verification & candidate mapping</span>
-                </div>
-                <div className="flex items-center gap-2 text-green-700">
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Free replacement support within contract validity</span>
-                </div>
-                <div className="flex items-center gap-2 text-green-700">
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Dedicated ZomoCook support manager</span>
-                </div>
-              </div>
-
-              {/* Pay Button */}
-              <button
-                type="button"
-                onClick={handleFinalSubmitAndPay}
-                disabled={isSubmitting}
-                className="w-full bg-[#d62423] hover:bg-[#b81d1c] disabled:bg-slate-300 text-white py-3 rounded-xl font-extrabold text-[15px] shadow-[0_6px_20px_rgba(214,36,35,0.35)] transition-all flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Connecting Payment Gateway...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Pay ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'} & Confirm</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStep(3)}
-                className="text-[12.5px] font-bold text-slate-500 hover:text-slate-800"
-              >
-                ← Back to Summary
-              </button>
             </div>
           )}
 
