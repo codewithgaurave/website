@@ -457,7 +457,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-3xl bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] flex flex-col">
         
         {/* Modal Top Header */}
         <div className="relative px-6 pt-6 pb-4 border-b border-slate-100 text-center bg-white">

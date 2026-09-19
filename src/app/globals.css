@@ -24,3 +24,28 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Cashfree Payment Gateway Modal & Popup Size Enlargement */
+iframe[name*="cashfree"],
+iframe[id*="cashfree"],
+iframe[src*="cashfree.com"],
+div[id*="cashfree"],
+div[class*="cf-checkout"],
+div[class*="cf-modal"],
+.cashfree-sdk-modal {
+  max-width: 580px !important;
+  width: 95vw !important;
+  border-radius: 18px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+}
+
+@media (min-width: 640px) {
+  iframe[name*="cashfree"],
+  iframe[id*="cashfree"],
+  iframe[src*="cashfree.com"] {
+    min-width: 460px !important;
+    min-height: 640px !important;
+    width: 520px !important;
+  }
+}
+
