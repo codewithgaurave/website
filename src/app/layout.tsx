@@ -32,12 +32,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} font-sans h-full antialiased`}
     >
       <head>
         <script src="https://sdk.cashfree.com/js/v3/cashfree.js" async></script>
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="font-sans min-h-full flex flex-col">
         <Navbar />
         <main className="flex-1">
           {children}

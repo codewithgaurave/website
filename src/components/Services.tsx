@@ -30,7 +30,7 @@ export default function Services() {
             radial-gradient(circle at 95% 80%, rgba(237, 28, 36, 0.06), transparent 25%),
             linear-gradient(135deg, #f7faff, #fff 50%, #f8fbff);
 
-          font-family: Arial, Helvetica, sans-serif;
+          font-family: inherit;
         }
 
         .zc-container {
