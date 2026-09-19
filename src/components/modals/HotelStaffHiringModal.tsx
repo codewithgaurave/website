@@ -361,30 +361,23 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
         }
       };
 
-      let backendSuccess = false;
       let generatedRef = `ZOMO-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      try {
-        const res = await fetch(`${API_BASE}/api/jobs/web-commercial-booking`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(userToken && { 'Authorization': `Bearer ${userToken}` })
-          },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          backendSuccess = true;
-          if (data.jobs && data.jobs[0]?.jobCode) {
-            generatedRef = data.jobs[0].jobCode;
-          }
-        }
-      } catch (err) {
-        console.warn('Backend call failed, saving to local lead database...', err);
+      const res = await fetch(`${API_BASE}/api/jobs/web-commercial-booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userToken && { 'Authorization': `Bearer ${userToken}` })
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.jobs && data.jobs[0]?.jobCode) {
+        generatedRef = data.jobs[0].jobCode;
       }
 
-      // 2. Also save as Lead in local website DB to ensure zero data loss
+      // Also save Lead record
       try {
         await fetch('/api/contact', {
           method: 'POST',
@@ -401,15 +394,42 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
         // ignore
       }
 
-      setBookingRef(generatedRef);
-      setBookingSuccess(true);
+      // If Cashfree Payment Session is returned, open Payment Gateway
+      if (data.paymentSessionId && typeof (window as any).Cashfree !== 'undefined') {
+        const cfEnv = data.environment === 'PRODUCTION' ? 'production' : 'sandbox';
+        const cashfree = (window as any).Cashfree({ mode: cfEnv });
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Booking Confirmed!',
-        text: `Your staff requirement #${generatedRef} has been received. Our team will verify and assign candidate profiles shortly.`,
-        confirmButtonColor: '#d62423'
-      });
+        cashfree.checkout({
+          paymentSessionId: data.paymentSessionId,
+          redirectTarget: '_modal'
+        }).then((result: any) => {
+          if (result.error) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Payment Incomplete',
+              text: 'Payment was not completed. Please complete ₹299 processing fee to confirm.',
+              confirmButtonColor: '#d62423'
+            });
+          } else {
+            // Payment success
+            setBookingRef(generatedRef);
+            setBookingSuccess(true);
+            Swal.fire({
+              icon: 'success',
+              title: 'Payment Successful & Booking Confirmed!',
+              text: `Your staff requirement #${generatedRef} has been received. Our team will verify and assign candidate profiles shortly.`,
+              confirmButtonColor: '#d62423'
+            });
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Payment Gateway Error',
+          text: data.message || 'Unable to initiate ₹299 payment. Please try again.',
+          confirmButtonColor: '#d62423'
+        });
+      }
 
     } catch (error: any) {
       Swal.fire({
@@ -449,9 +469,9 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center justify-center gap-1 mb-1">
+          <div className="flex items-center justify-center mb-1">
             <span className="text-[24px] font-black text-[#0f2441] tracking-tight">Zomo</span>
-            <span className="text-[24px] font-black text-[#d62423] tracking-tight">Cook</span>
+            <span className="text-[24px] font-black text-[#d62423] tracking-tight">cook</span>
           </div>
           <p className="text-[12.5px] font-semibold text-slate-400">
             Hire the right staff for your business
@@ -709,7 +729,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                         <select 
                           value={item.serviceCategory}
                           onChange={(e) => handleStaffChange(item.id, 'serviceCategory', e.target.value)}
-                          className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium focus:border-[#024a9d] outline-none"
+                          className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium text-slate-800 focus:border-[#024a9d] outline-none cursor-pointer"
                         >
                           {serviceCategories.map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
@@ -718,14 +738,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                       </div>
 
                       {/* Staff Category */}
-                      <div className="sm:col-span-4">
+                      <div className="sm:col-span-3">
                         <label className="block text-[11.5px] font-bold text-slate-600 mb-1">
                           Staff Category <span className="text-red-500">*</span>
                         </label>
                         <select 
                           value={item.staffCategory}
                           onChange={(e) => handleStaffChange(item.id, 'staffCategory', e.target.value)}
-                          className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium focus:border-[#024a9d] outline-none"
+                          className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium text-slate-800 focus:border-[#024a9d] outline-none cursor-pointer"
                         >
                           {staffCategories.map(sc => (
                             <option key={sc} value={sc}>{sc}</option>
@@ -741,7 +761,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                         <select 
                           value={item.salaryRange}
                           onChange={(e) => handleStaffChange(item.id, 'salaryRange', e.target.value)}
-                          className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium focus:border-[#024a9d] outline-none"
+                          className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium text-slate-800 focus:border-[#024a9d] outline-none cursor-pointer"
                         >
                           {salaryRanges.map(sal => (
                             <option key={sal} value={sal}>{sal}</option>
@@ -750,14 +770,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                       </div>
 
                       {/* No. of Staff */}
-                      <div className="sm:col-span-1">
+                      <div className="sm:col-span-2">
                         <label className="block text-[11.5px] font-bold text-slate-600 mb-1">
                           No. <span className="text-red-500">*</span>
                         </label>
                         <select 
                           value={item.noOfStaff}
                           onChange={(e) => handleStaffChange(item.id, 'noOfStaff', Number(e.target.value))}
-                          className="w-full px-2 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium focus:border-[#024a9d] outline-none text-center"
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-[13.5px] font-bold text-slate-800 focus:border-[#024a9d] outline-none text-center cursor-pointer"
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                             <option key={num} value={num}>{num}</option>
@@ -771,7 +791,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                           type="button"
                           disabled={staffList.length === 1}
                           onClick={() => handleRemoveStaffRow(item.id)}
-                          className="w-9 h-9 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-30 disabled:hover:bg-red-50 flex items-center justify-center transition-colors"
+                          className="w-9 h-9 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-30 disabled:hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
                           title="Remove row"
                         >
                           <X className="w-4 h-4" />
@@ -809,17 +829,19 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                   ].map(fac => (
                     <label 
                       key={fac.id}
-                      className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-[12.5px] font-medium transition-all ${
-                        facilities[fac.id] ? 'border-[#024a9d] bg-blue-50/50 text-[#024a9d]' : 'border-slate-200 bg-white text-slate-700'
+                      className={`flex items-center justify-center gap-2 px-2.5 py-2.5 rounded-xl border cursor-pointer text-[12px] font-semibold transition-all h-full min-h-[46px] select-none text-center ${
+                        facilities[fac.id] 
+                          ? 'border-[#024a9d] bg-blue-50/80 text-[#024a9d] shadow-sm ring-1 ring-[#024a9d]/30' 
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
                       <input 
                         type="checkbox"
                         checked={facilities[fac.id] || false}
                         onChange={(e) => setFacilities(prev => ({ ...prev, [fac.id]: e.target.checked }))}
-                        className="rounded text-[#024a9d] focus:ring-0"
+                        className="rounded text-[#024a9d] focus:ring-0 shrink-0 w-4 h-4 cursor-pointer"
                       />
-                      <span>{fac.label}</span>
+                      <span className="leading-tight">{fac.label}</span>
                     </label>
                   ))}
                 </div>
