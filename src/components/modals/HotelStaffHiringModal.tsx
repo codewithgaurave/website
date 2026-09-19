@@ -396,7 +396,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
 
       // If Cashfree Payment Session is returned, open Payment Gateway
       if (data.paymentSessionId && typeof (window as any).Cashfree !== 'undefined') {
-        const cfEnv = data.environment === 'PRODUCTION' ? 'production' : 'sandbox';
+        const cfEnv = (data.environment === 'SANDBOX' || data.environment === 'TEST') ? 'sandbox' : 'production';
         const cashfree = (window as any).Cashfree({ mode: cfEnv });
 
         cashfree.checkout({

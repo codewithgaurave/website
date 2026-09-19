@@ -229,7 +229,8 @@ export default function DomesticBookingForm() {
       const resData = await response.json();
       if (resData.success) {
         if (resData.paymentSessionId && typeof (window as any).Cashfree !== 'undefined') {
-          const cashfree = (window as any).Cashfree({ mode: 'sandbox' });
+          const cfEnv = (resData.environment === 'SANDBOX' || resData.environment === 'TEST') ? 'sandbox' : 'production';
+          const cashfree = (window as any).Cashfree({ mode: cfEnv });
           cashfree.checkout({
             paymentSessionId: resData.paymentSessionId,
             redirectTarget: '_modal'

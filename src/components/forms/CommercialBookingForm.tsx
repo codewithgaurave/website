@@ -227,7 +227,8 @@ export default function CommercialBookingForm() {
       if (resData.success) {
         // If Cashfree Payment Session is returned, launch Cashfree Checkout
         if (resData.paymentSessionId && typeof (window as any).Cashfree !== 'undefined') {
-          const cashfree = (window as any).Cashfree({ mode: 'sandbox' }); // or production
+          const cfEnv = (resData.environment === 'SANDBOX' || resData.environment === 'TEST') ? 'sandbox' : 'production';
+          const cashfree = (window as any).Cashfree({ mode: cfEnv });
           cashfree.checkout({
             paymentSessionId: resData.paymentSessionId,
             redirectTarget: '_modal'
