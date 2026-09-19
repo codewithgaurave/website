@@ -279,6 +279,17 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Floating Call Button */}
+        <a 
+          href="tel:+919519808734"
+          className="fixed right-6 bottom-24 z-50 w-14 h-14 bg-[#0866e8] text-white rounded-full flex items-center justify-center shadow-[0_4px_25px_rgba(8,102,232,0.4)] hover:scale-110 transition-transform cursor-pointer group"
+          aria-label="Call Now"
+        >
+          {/* Circular Ripple Effect */}
+          <span className="absolute inset-0 rounded-full border border-[#0866e8] animate-ping opacity-75 group-hover:opacity-100"></span>
+          <Phone className="w-6 h-6 text-white relative z-10" />
+        </a>
+
         {/* Floating WhatsApp Button */}
         <a 
           href="https://wa.me/919519808734"
