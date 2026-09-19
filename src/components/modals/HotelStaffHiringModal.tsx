@@ -164,7 +164,6 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
       const data = await res.json();
       if (data.success) {
         setOtpSent(true);
-        setServerOtp(data.otp || '123456');
         setTimer(60);
         Swal.fire({
           icon: 'success',
@@ -173,25 +172,18 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
           confirmButtonColor: '#d62423'
         });
       } else {
-        // Fallback
-        setOtpSent(true);
-        setServerOtp('123456');
-        setTimer(60);
         Swal.fire({
-          icon: 'success',
-          title: 'OTP Sent!',
-          text: `OTP has been sent to ${cleanPhone}.`,
+          icon: 'error',
+          title: 'Failed to Send OTP',
+          text: data.message || 'Please check the mobile number and try again.',
           confirmButtonColor: '#d62423'
         });
       }
-    } catch (err) {
-      setOtpSent(true);
-      setServerOtp('123456');
-      setTimer(60);
+    } catch (err: any) {
       Swal.fire({
-        icon: 'success',
-        title: 'OTP Sent!',
-        text: `OTP has been sent to ${cleanPhone}.`,
+        icon: 'error',
+        title: 'Network Error',
+        text: 'Unable to connect to SMS server. Please check your internet or try again later.',
         confirmButtonColor: '#d62423'
       });
     } finally {
@@ -227,7 +219,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
       });
       const data = await res.json();
 
-      if (data.success || otpValue.trim() === serverOtp || otpValue.trim() === '123456') {
+      if (data.success) {
         setIsPhoneVerified(true);
         setOtpSent(false);
         if (data.token) {
@@ -256,25 +248,13 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
           confirmButtonColor: '#d62423'
         });
       }
-    } catch (err) {
-      if (otpValue.trim() === serverOtp || otpValue.trim() === '123456') {
-        setIsPhoneVerified(true);
-        setOtpSent(false);
-        Swal.fire({
-          icon: 'success',
-          title: 'Verified!',
-          text: 'Mobile number verified successfully.',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid OTP',
-          text: 'Please enter the correct 6-digit OTP.',
-          confirmButtonColor: '#d62423'
-        });
-      }
+    } catch (err: any) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Verification Failed',
+        text: err.message || 'Unable to connect to server. Please try again.',
+        confirmButtonColor: '#d62423'
+      });
     } finally {
       setIsVerifyingOtp(false);
     }
