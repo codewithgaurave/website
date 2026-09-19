@@ -6,9 +6,8 @@ import HomeCookHiringModal from '@/components/modals/HomeCookHiringModal';
 import DailyStaffHiringModal from '@/components/modals/DailyStaffHiringModal';
 
 export default function Services() {
-  const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
-  const [isHomeCookModalOpen, setIsHomeCookModalOpen] = useState(false);
-  const [isDailyModalOpen, setIsDailyModalOpen] = useState(false);
+  const [modalService, setModalService] = useState<'commercial' | 'homecook' | 'daily' | 'party'>('commercial');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <>
@@ -705,7 +704,8 @@ export default function Services() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsHotelModalOpen(true);
+                  setModalService('commercial');
+                  setIsModalOpen(true);
                 }}
                 className="zc-button"
               >
@@ -717,7 +717,10 @@ export default function Services() {
             {/* ================= CARD 2: HOMECOOK ================= */}
             <article 
               className="zc-card zc-home"
-              onClick={() => setIsHomeCookModalOpen(true)}
+              onClick={() => {
+                setModalService('homecook');
+                setIsModalOpen(true);
+              }}
             >
               <div className="zc-shine"></div>
 
@@ -782,7 +785,8 @@ export default function Services() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsHomeCookModalOpen(true);
+                  setModalService('homecook');
+                  setIsModalOpen(true);
                 }}
                 className="zc-button"
               >
@@ -794,7 +798,10 @@ export default function Services() {
             {/* ================= CARD 3: DAILY BASIS ================= */}
             <article 
               className="zc-card zc-daily"
-              onClick={() => setIsDailyModalOpen(true)}
+              onClick={() => {
+                setModalService('daily');
+                setIsModalOpen(true);
+              }}
             >
               <div className="zc-shine"></div>
 
@@ -860,7 +867,8 @@ export default function Services() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsDailyModalOpen(true);
+                  setModalService('daily');
+                  setIsModalOpen(true);
                 }}
                 className="zc-button"
               >
@@ -873,7 +881,8 @@ export default function Services() {
             <article 
               className="zc-card zc-occasion"
               onClick={() => {
-                window.location.href = "/services/book-chef-on-birthday-party";
+                setModalService('party');
+                setIsModalOpen(true);
               }}
             >
               <div className="zc-shine"></div>
@@ -939,8 +948,13 @@ export default function Services() {
                 </div>
               </div>
 
-              <Link
-                href="/services/book-chef-on-birthday-party"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setModalService('party');
+                  setIsModalOpen(true);
+                }}
                 className="zc-button !bg-gradient-to-r !from-[#7639e8] !to-[#5d20c6] !text-white !shadow-[0_9px_20px_rgba(109,43,217,0.25)]"
                 style={{
                   background: 'linear-gradient(135deg, #7639e8, #5d20c6)',
@@ -953,13 +967,12 @@ export default function Services() {
                   borderRadius: '50px',
                   fontWeight: 800,
                   fontSize: '13px',
-                  textDecoration: 'none',
                   boxShadow: '0 9px 20px rgba(109, 43, 217, 0.25)'
                 }}
               >
                 Continue
                 <span className="zc-arrow">→</span>
-              </Link>
+              </button>
             </article>
 
           </div>
@@ -991,22 +1004,11 @@ export default function Services() {
         </div>
       </section>
 
-      {/* Hotel Staff Hiring Modal Popup */}
+      {/* Master 4-Service Unified Hiring Modal */}
       <HotelStaffHiringModal 
-        isOpen={isHotelModalOpen} 
-        onClose={() => setIsHotelModalOpen(false)} 
-      />
-
-      {/* Home Cook Hiring Modal Popup */}
-      <HomeCookHiringModal 
-        isOpen={isHomeCookModalOpen} 
-        onClose={() => setIsHomeCookModalOpen(false)} 
-      />
-
-      {/* Daily Staff Hiring Modal Popup */}
-      <DailyStaffHiringModal 
-        isOpen={isDailyModalOpen} 
-        onClose={() => setIsDailyModalOpen(false)} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        initialService={modalService}
       />
     </>
   );
