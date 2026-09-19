@@ -22,36 +22,60 @@ interface HotelStaffHiringModalProps {
 }
 
 const serviceCategories = [
-  'Hotel / Restaurant',
-  'Cafe / Bakery',
-  'Cloud Kitchen / Canteen',
-  'Resort / Bar & Lounge',
-  'Fast Food / QSR',
-  'Dhaba / Catering Unit'
+  'Kitchen Staff',
+  'Service Staff',
+  'Housekeeping Staff',
+  'Management Staff',
+  'Utility / Other Staff'
 ];
 
-const staffCategories = [
-  'Head Chef / Master Chef',
-  'Sous Chef',
-  'North Indian Chef',
-  'South Indian Chef',
-  'Chinese Chef',
-  'Tandoor Chef',
-  'Continental Chef',
-  'Italian / Mexican Chef',
-  'Mughlai Chef',
-  'Bakery & Pastry Chef',
-  'All-Rounder Cook',
-  'Fast Food Cook',
-  'Commi 1 / Commi 2',
-  'Kitchen Helper / Commis 3',
-  'Restaurant Manager',
-  'Captain / Supervisor',
-  'Waiter / Steward',
-  'Bartender / Barista',
-  'Dishwasher / Utility Staff',
-  'Housekeeping Staff'
-];
+const staffCategoriesMap: { [key: string]: string[] } = {
+  'Kitchen Staff': [
+    'Head Chef / Master Chef',
+    'Executive Chef',
+    'Sous Chef',
+    'North Indian Chef',
+    'South Indian Chef',
+    'Chinese Chef',
+    'Tandoor Chef',
+    'Continental Chef',
+    'Italian / Mexican Chef',
+    'Mughlai Chef',
+    'Bakery & Pastry Chef',
+    'All-Rounder Cook',
+    'Fast Food Cook',
+    'Commi 1 / Commi 2',
+    'Kitchen Helper / Commis 3'
+  ],
+  'Service Staff': [
+    'Captain / Supervisor',
+    'Waiter / Steward',
+    'Bartender / Barista',
+    'Food Runner / Busser',
+    'Host / Hostess'
+  ],
+  'Housekeeping Staff': [
+    'Housekeeping Staff',
+    'Room Boy / Attendant',
+    'Cleaning Staff',
+    'Laundry Staff'
+  ],
+  'Management Staff': [
+    'Restaurant Manager',
+    'General Manager',
+    'Assistant Manager',
+    'Floor Supervisor',
+    'Cashier / Billing Staff'
+  ],
+  'Utility / Other Staff': [
+    'Dishwasher / Utility Staff',
+    'Kitchen Cleaner',
+    'Store Helper / Loader',
+    'Security Guard'
+  ]
+};
+
+const allStaffCategories = Object.values(staffCategoriesMap).flat();
 
 const salaryRanges = [
   '₹10,000 - ₹15,000',
@@ -83,7 +107,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
   const [staffList, setStaffList] = useState<StaffItem[]>([
     {
       id: '1',
-      serviceCategory: 'Hotel / Restaurant',
+      serviceCategory: 'Kitchen Staff',
       staffCategory: 'Head Chef / Master Chef',
       salaryRange: '₹25,000 - ₹35,000',
       noOfStaff: 1
@@ -266,7 +290,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
       ...prev,
       {
         id: Date.now().toString(),
-        serviceCategory: 'Hotel / Restaurant',
+        serviceCategory: 'Kitchen Staff',
         staffCategory: 'Sous Chef',
         salaryRange: '₹20,000 - ₹25,000',
         noOfStaff: 1
@@ -282,6 +306,10 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
   const handleStaffChange = (id: string, field: keyof StaffItem, value: any) => {
     setStaffList(prev => prev.map(item => {
       if (item.id === id) {
+        if (field === 'serviceCategory') {
+          const newStaffCat = staffCategoriesMap[value]?.[0] || 'Head Chef / Master Chef';
+          return { ...item, serviceCategory: value, staffCategory: newStaffCat };
+        }
         return { ...item, [field]: value };
       }
       return item;
@@ -747,7 +775,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                           onChange={(e) => handleStaffChange(item.id, 'staffCategory', e.target.value)}
                           className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-medium text-slate-800 focus:border-[#024a9d] outline-none cursor-pointer"
                         >
-                          {staffCategories.map(sc => (
+                          {(staffCategoriesMap[item.serviceCategory] || allStaffCategories).map(sc => (
                             <option key={sc} value={sc}>{sc}</option>
                           ))}
                         </select>
