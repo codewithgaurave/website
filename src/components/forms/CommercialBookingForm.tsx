@@ -146,7 +146,7 @@ export default function CommercialBookingForm() {
         Swal.fire({
           icon: 'success',
           title: 'OTP Sent!',
-          text: `OTP sent to ${phone}. (For testing OTP is ${data.otp || '123456'})`
+          text: `OTP sent to ${phone}.`
         });
       }
     } catch (err) {

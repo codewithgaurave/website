@@ -169,18 +169,18 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
         Swal.fire({
           icon: 'success',
           title: 'OTP Sent!',
-          text: `OTP has been sent to ${cleanPhone}. ${data.otp ? `(OTP: ${data.otp})` : ''}`,
+          text: `OTP has been sent to ${cleanPhone}.`,
           confirmButtonColor: '#d62423'
         });
       } else {
-        // Fallback for offline/test
+        // Fallback
         setOtpSent(true);
         setServerOtp('123456');
         setTimer(60);
         Swal.fire({
-          icon: 'info',
+          icon: 'success',
           title: 'OTP Sent!',
-          text: `Enter OTP 123456 to verify.`,
+          text: `OTP has been sent to ${cleanPhone}.`,
           confirmButtonColor: '#d62423'
         });
       }
@@ -189,9 +189,9 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
       setServerOtp('123456');
       setTimer(60);
       Swal.fire({
-        icon: 'info',
-        title: 'Verification Code',
-        text: 'Enter test OTP 123456 to verify.',
+        icon: 'success',
+        title: 'OTP Sent!',
+        text: `OTP has been sent to ${cleanPhone}.`,
         confirmButtonColor: '#d62423'
       });
     } finally {
@@ -271,7 +271,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
         Swal.fire({
           icon: 'error',
           title: 'Invalid OTP',
-          text: 'Please enter valid OTP (123456 for testing).',
+          text: 'Please enter the correct 6-digit OTP.',
           confirmButtonColor: '#d62423'
         });
       }
@@ -644,7 +644,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose }: HotelStaffHir
                       maxLength={6}
                       value={otpValue}
                       onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
-                      placeholder="Enter OTP (e.g. 123456)"
+                      placeholder="Enter 6-digit OTP"
                       className="flex-1 px-3.5 py-2 rounded-lg bg-white border border-blue-200 focus:border-[#024a9d] outline-none text-center font-bold tracking-widest text-[16px]"
                     />
                     <button
