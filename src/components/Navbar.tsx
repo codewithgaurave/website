@@ -327,7 +327,12 @@ export default function Navbar() {
 
             {/* CTA Button */}
             <div className="hidden lg:flex items-center">
-              <div className="bg-black hover:bg-slate-800 text-white cursor-pointer px-6 py-2.5 rounded-none-none flex items-center gap-3 transition-transform hover:scale-105 shadow-md">
+              <a 
+                href="https://play.google.com/store/apps/details?id=digi.coders.zomocook&hl=en"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-black hover:bg-slate-800 text-white cursor-pointer px-6 py-2.5 rounded-none-none flex items-center gap-3 transition-transform hover:scale-105 shadow-md"
+              >
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Play_Arrow_logo.svg" 
                   alt="Play Store"
@@ -337,7 +342,7 @@ export default function Navbar() {
                   <span className="text-[10px] uppercase leading-none opacity-80">Get it on</span>
                   <span className="text-sm font-bold leading-none mt-0.5">Google Play</span>
                 </div>
-              </div>
+              </a>
             </div>
 
             <div className="lg:hidden flex items-center">
@@ -464,7 +469,12 @@ export default function Navbar() {
               </div>
             ))}
             <div className="mt-4 px-4 pt-4 border-t border-slate-100">
-              <button className="w-full bg-black text-white px-5 py-3 rounded-none-none flex items-center justify-center gap-3 shadow-md">
+              <a 
+                href="https://play.google.com/store/apps/details?id=digi.coders.zomocook&hl=en"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-black text-white px-5 py-3 rounded-none-none flex items-center justify-center gap-3 shadow-md"
+              >
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Play_Arrow_logo.svg" 
                   alt="Play Store"
@@ -474,7 +484,7 @@ export default function Navbar() {
                   <span className="text-[10px] uppercase leading-none opacity-80">Get it on</span>
                   <span className="text-sm font-bold leading-none mt-0.5">Google Play</span>
                 </div>
-              </button>
+              </a>
             </div>
           </div>
         </div>

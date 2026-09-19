@@ -199,10 +199,15 @@ export default function Footer() {
                   </div>
                 </div>
                 
-                <button className="w-full bg-white text-slate-900 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:scale-[1.02] hover:bg-slate-50 transition-all font-bold text-xs">
+                <a 
+                  href="https://play.google.com/store/apps/details?id=digi.coders.zomocook&hl=en"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-white text-slate-900 flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:scale-[1.02] hover:bg-slate-50 transition-all font-bold text-xs"
+                >
                   <Play className="w-4 h-4 fill-current" />
                   Google Play
-                </button>
+                </a>
               </div>
             </div>
           </div>
