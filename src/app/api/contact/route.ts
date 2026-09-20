@@ -34,6 +34,25 @@ export async function POST(request: Request) {
       details: details || null,
     });
 
+    // Also sync with backend queries collection for Admin Panel Query History
+    try {
+      const mongoose = (await import('mongoose')).default;
+      if (mongoose.connection && mongoose.connection.db) {
+        await mongoose.connection.db.collection('queries').insertOne({
+          name: name,
+          phone: phone,
+          email: safeEmail,
+          message: `${sourceType ? `[${sourceType}] ` : ''}${message || (city ? `City: ${city}, Address: ${address || ''}` : 'Requirement submitted from website')}`,
+          category: 'Customer',
+          status: 'New',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+    } catch (syncErr) {
+      console.error('Error syncing with queries collection:', syncErr);
+    }
+
     // Nodemailer Email Notification to Admin
     try {
       const transporter = nodemailer.createTransport({

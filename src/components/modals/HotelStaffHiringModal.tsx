@@ -656,6 +656,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   ]);
 
   // Menu Modal State for Party Chef
+  const [dynamicMenuCatalog, setDynamicMenuCatalog] = useState<MenuItemCatalog[]>(menuCatalog);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [activeDateIndex, setActiveDateIndex] = useState<number | null>(null);
   const [activeMealIndex, setActiveMealIndex] = useState<number | null>(null);
@@ -664,6 +665,29 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const [menuSearchQuery, setMenuSearchQuery] = useState<string>('');
   const [foodTypeFilter, setFoodTypeFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
   const [showMoreCuisines, setShowMoreCuisines] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchDynamicMenu = async () => {
+      try {
+        const res = await fetch('/api/menu-items');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const mapped: MenuItemCatalog[] = json.data.map((item: any) => ({
+            name: item.name,
+            cuisine: item.cuisine,
+            category: item.category,
+            isNonVeg: item.foodType === 'non-veg' || !!item.isNonVeg,
+            image: item.image || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200'
+          }));
+          setDynamicMenuCatalog(mapped);
+        }
+      } catch (e) {
+        console.error('Failed to load dynamic menu', e);
+      }
+    };
+
+    fetchDynamicMenu();
+  }, []);
 
   const toggleCuisineSelection = (cuisineId: string) => {
     setSelectedCuisines(prev => 
@@ -2347,7 +2371,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                     {meal.menu.length > 0 && (
                                       <div className="flex flex-wrap gap-2 pt-1">
                                         {meal.menu.map(item => {
-                                          const food = menuCatalog.find(x => x.name === item);
+                                          const food = dynamicMenuCatalog.find(x => x.name === item) || menuCatalog.find(x => x.name === item);
                                           return (
                                             <div key={item} className="flex items-center gap-2 p-1.5 pr-2.5 border border-[#dce4ef] bg-white rounded-xl shadow-xs">
                                               {food && (
@@ -2814,7 +2838,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
       {/* ================= MENU SELECTION MODAL ================= */}
       {isMenuModalOpen && (() => {
-        const filteredMenuItems = menuCatalog.filter(item => {
+        const filteredMenuItems = dynamicMenuCatalog.filter(item => {
           // Food Type filter
           if (foodTypeFilter === 'veg' && item.isNonVeg) return false;
           if (foodTypeFilter === 'non-veg' && !item.isNonVeg) return false;
