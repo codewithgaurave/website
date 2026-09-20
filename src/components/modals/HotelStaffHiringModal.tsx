@@ -702,7 +702,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   };
 
   // Payment Method and Terms
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking' | 'wallet'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'upi'>('upi');
   const [partyAgreeTerms, setPartyAgreeTerms] = useState<boolean>(false);
 
   // Global Submission & Success
@@ -2731,49 +2731,100 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                   </div>
                 </div>
 
-                {/* Payment Options Card */}
+                {/* Payment Option - Direct UPI Only */}
                 <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-3">
-                  <h3 className="font-extrabold text-[15px] text-slate-900">Select Payment Method</h3>
-                  <div className="space-y-2">
-                    {[
-                      { id: 'card' as const, label: '💳 Credit / Debit Card' },
-                      { id: 'upi' as const, label: '📱 UPI' },
-                      { id: 'netbanking' as const, label: '🏦 Net Banking' },
-                      { id: 'wallet' as const, label: '💰 Wallet' }
-                    ].map(opt => (
-                      <label 
-                        key={opt.id}
-                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                          paymentMethod === opt.id ? 'border-[#0866ed] bg-blue-50/50 font-bold text-[#0866ed]' : 'border-slate-200 hover:border-slate-300 bg-white font-medium text-slate-700'
-                        }`}
-                      >
-                        <input 
-                          type="radio"
-                          name="partyPaymentMethod"
-                          checked={paymentMethod === opt.id}
-                          onChange={() => setPaymentMethod(opt.id)}
-                          className="w-4 h-4 text-[#0866ed]"
-                        />
-                        <span className="text-[13.5px]">{opt.label}</span>
-                      </label>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-extrabold text-[15px] text-slate-900">Payment Method</h3>
+                    <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      ⚡ Instant & Secure
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border-2 border-[#0866ed] bg-blue-50/40 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-[#0866ed] text-white flex items-center justify-center shrink-0">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-1.5">
+                          <span>📱 UPI Payment</span>
+                        </div>
+                        <div className="text-[12px] text-slate-500 font-medium mt-0.5">
+                          Google Pay, PhonePe, Paytm, BHIM & all UPI apps
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                      <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-bold text-slate-700 shadow-2xs">
+                        GPay
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-bold text-slate-700 shadow-2xs">
+                        PhonePe
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-bold text-slate-700 shadow-2xs">
+                        Paytm
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Terms Confirmation Card */}
-                <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-3">
-                  <h3 className="font-extrabold text-[15px] text-slate-900">Booking Confirmation</h3>
-                  <p className="text-[12.5px] text-slate-500 leading-relaxed">
-                    Please confirm that all dates, meals, guest counts and menu selections are correct.
-                  </p>
-                  <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 text-[12.5px] text-slate-700 font-semibold cursor-pointer">
+                {/* General Terms & Conditions Card */}
+                <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <h3 className="font-extrabold text-[15px] text-slate-900 flex items-center gap-1.5">
+                      <span>📜 General Terms & Conditions</span>
+                      <span className="text-red-500">*</span>
+                    </h3>
+                  </div>
+
+                  {/* 6 numbered guidelines */}
+                  <div className="space-y-2 text-[12.5px] text-slate-600">
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                      <span className="font-medium">Chef and Assistant cook do not carry grocery items.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                      <span className="font-medium">Chef and Assistant do not carry utensils, knife or burner.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                      <span className="font-medium">Assistant cook will clean the kitchen slab, pot basin and gas stove.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">4</span>
+                      <span className="font-medium">Ingredients list is shared after booking.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">5</span>
+                      <span className="font-medium">Chef will arrive as per selected time slots by you. Once entered in the kitchen, duty starts to perform for 6 hours.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">6</span>
+                      <span className="font-medium">Overtime charges are <strong className="text-slate-900 font-bold">₹7/min</strong> if you extend service.</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Terms Callout */}
+                  <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-[12px] text-amber-900">
+                    <div className="font-extrabold flex items-center gap-1.5 mb-0.5 text-amber-950">
+                      <span>💳 Payment - Terms and conditions:</span>
+                    </div>
+                    <p className="font-medium text-amber-900 leading-relaxed">
+                      This booking is confirmed on <strong className="font-bold text-amber-950">25% advance</strong>. Rest amount to be deposited at the end of the event.
+                    </p>
+                  </div>
+
+                  {/* Agreement Checkbox */}
+                  <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 text-[12.5px] text-slate-800 font-semibold cursor-pointer transition-colors">
                     <input 
                       type="checkbox"
                       checked={partyAgreeTerms}
                       onChange={(e) => setPartyAgreeTerms(e.target.checked)}
-                      className="w-4 h-4 text-[#0866ed] rounded mt-0.5"
+                      className="w-4 h-4 text-[#0866ed] rounded mt-0.5 cursor-pointer"
                     />
-                    <span>I agree to the booking terms and cancellation policy.</span>
+                    <span>Yes, I agree with the cancellation policy and terms and conditions.</span>
                   </label>
                 </div>
 
