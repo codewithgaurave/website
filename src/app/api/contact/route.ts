@@ -38,11 +38,16 @@ export async function POST(request: Request) {
     try {
       const mongoose = (await import('mongoose')).default;
       if (mongoose.connection && mongoose.connection.db) {
+        let formattedMessage = `📌 Service: ${sourceType || 'General Entry'}\n📍 City: ${city || 'Not specified'}\n🏠 Address: ${address || 'Not specified'}`;
+        if (message) {
+          formattedMessage += `\n\n📝 Details:\n${message}`;
+        }
+
         await mongoose.connection.db.collection('queries').insertOne({
           name: name,
           phone: phone,
           email: safeEmail,
-          message: `${sourceType ? `[${sourceType}] ` : ''}${message || (city ? `City: ${city}, Address: ${address || ''}` : 'Requirement submitted from website')}`,
+          message: formattedMessage,
           category: 'Customer',
           status: 'New',
           createdAt: new Date(),

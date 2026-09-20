@@ -1489,12 +1489,12 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           </div>
 
           {/* 4 Service Tabs */}
-          <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="px-3 sm:px-5 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
             {[
-              { id: 'commercial' as ServiceTabType, label: '🏨 Commercial Hiring' },
-              { id: 'homecook' as ServiceTabType, label: '🏠 Domestic Home Cook' },
-              { id: 'daily' as ServiceTabType, label: '📅 Daily Basis Staff' },
-              { id: 'party' as ServiceTabType, label: '👨‍🍳 Chef for Party' }
+              { id: 'commercial' as ServiceTabType, shortLabel: '🏨 Hotel Staff', label: '🏨 Commercial Hiring' },
+              { id: 'homecook' as ServiceTabType, shortLabel: '🏠 Home Cook', label: '🏠 Domestic Home Cook' },
+              { id: 'daily' as ServiceTabType, shortLabel: '📅 Daily Staff', label: '📅 Daily Basis Staff' },
+              { id: 'party' as ServiceTabType, shortLabel: '👨‍🍳 Party Chef', label: '👨‍🍳 Chef for Party' }
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
@@ -1506,13 +1506,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     setStep(1);
                     setBookingSuccess(false);
                   }}
-                  className={`py-2 px-3 rounded-xl font-bold text-[12.5px] transition-all text-center truncate ${
+                  className={`py-2 px-2 rounded-xl font-extrabold text-[12px] sm:text-[13px] transition-all text-center flex items-center justify-center cursor-pointer active:scale-[0.98] ${
                     isActive
-                      ? 'bg-[#0866ed] text-white shadow-md'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                      ? 'bg-[#0866ed] text-white shadow-xs'
+                      : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
-                  {tab.label}
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               );
             })}
@@ -2363,25 +2364,25 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                     <button
                                       type="button"
                                       onClick={() => openMenuModal(dateIdx, mealIdx)}
-                                      className="py-2.5 px-4 rounded-xl border border-dashed border-[#72a8ff] bg-[#f7fbff] hover:bg-blue-50 text-[#0866ed] font-bold text-[13px] transition-colors"
+                                      className="w-full sm:w-auto py-2.5 px-4 rounded-xl border border-dashed border-[#72a8ff] bg-[#f7fbff] hover:bg-blue-50 text-[#0866ed] font-bold text-[13px] transition-colors text-center"
                                     >
                                       ＋ Select Menu Items
                                     </button>
 
                                     {meal.menu.length > 0 && (
-                                      <div className="flex flex-wrap gap-2 pt-1">
+                                      <div className="flex flex-wrap gap-1.5 pt-1">
                                         {meal.menu.map(item => {
                                           const food = dynamicMenuCatalog.find(x => x.name === item) || menuCatalog.find(x => x.name === item);
                                           return (
-                                            <div key={item} className="flex items-center gap-2 p-1.5 pr-2.5 border border-[#dce4ef] bg-white rounded-xl shadow-xs">
+                                            <div key={item} className="inline-flex items-center gap-1.5 p-1.5 pr-2 border border-[#dce4ef] bg-white rounded-xl shadow-xs max-w-full">
                                               {food && (
-                                                <img src={food.image} alt={item} className="w-8 h-8 rounded-lg object-cover" />
+                                                <img src={food.image} alt={item} className="w-7 h-7 rounded-lg object-cover shrink-0" />
                                               )}
-                                              <span className="text-[12.5px] font-bold text-slate-800">{item}</span>
+                                              <span className="text-[12px] font-bold text-slate-800 truncate">{item}</span>
                                               <button
                                                 type="button"
                                                 onClick={() => removeSingleMenuItem(dateIdx, mealIdx, item)}
-                                                className="w-5 h-5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xs font-bold transition-colors ml-1"
+                                                className="w-4.5 h-4.5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xs font-bold transition-colors ml-0.5 shrink-0"
                                               >
                                                 ×
                                               </button>
@@ -2421,18 +2422,18 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                             <div className="flex items-center gap-1.5">
                                               <button
                                                 type="button"
-                                                onClick={() => changePartyCategoryCount(dateIdx, mealIdx, cat.key, -1)}
-                                                className="w-7 h-7 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-extrabold text-[14px] flex items-center justify-center"
+                                                onClick={() => updateMealCategoryCount(dateIdx, mealIdx, cat.key, -1)}
+                                                className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center transition-colors"
                                               >
-                                                −
+                                                -
                                               </button>
-                                              <span className="min-w-[20px] text-center font-extrabold text-[13px]">
+                                              <span className="w-5 text-center font-bold text-[13px] text-slate-900">
                                                 {meal.categories[cat.key] || 0}
                                               </span>
                                               <button
                                                 type="button"
-                                                onClick={() => changePartyCategoryCount(dateIdx, mealIdx, cat.key, 1)}
-                                                className="w-7 h-7 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-extrabold text-[14px] flex items-center justify-center"
+                                                onClick={() => updateMealCategoryCount(dateIdx, mealIdx, cat.key, 1)}
+                                                className="w-6 h-6 rounded-lg bg-[#0866ed] hover:bg-[#0652ba] text-white font-bold text-xs flex items-center justify-center transition-colors"
                                               >
                                                 +
                                               </button>
@@ -2582,9 +2583,9 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                 }
 
                                 return (
-                                  <div key={mealIdx} className="p-3.5 sm:p-4 flex items-start justify-between gap-3 text-[12.5px]">
-                                    <div className="flex items-start gap-3.5">
-                                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-[20px] shrink-0 ${iconBg}`}>
+                                  <div key={mealIdx} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-[12.5px]">
+                                    <div className="flex items-start gap-3">
+                                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[18px] shrink-0 ${iconBg}`}>
                                         {icon}
                                       </div>
                                       <div className="space-y-1">
@@ -2603,11 +2604,11 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                       </div>
                                     </div>
 
-                                    <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                    <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 pt-2 sm:pt-0.5 border-t sm:border-t-0 border-slate-100">
+                                      <span className="sm:hidden text-[12px] font-bold text-slate-500">Meal Total:</span>
                                       <span className="font-extrabold text-[16px] text-[#0866ed]">
                                         ₹{mealTotalPrice.toLocaleString('en-IN')}
                                       </span>
-                                      <ChevronDown className="w-4 h-4 text-slate-400" />
                                     </div>
                                   </div>
                                 );
