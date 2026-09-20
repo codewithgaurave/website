@@ -5,7 +5,11 @@ export interface ILead extends Document {
   phone: string;
   email: string;
   sourceType: string;
-  sourceUrl: string;
+  sourceUrl?: string;
+  city?: string;
+  address?: string;
+  message?: string;
+  details?: any;
   status: string;
   createdAt: Date;
 }
@@ -21,7 +25,8 @@ const LeadSchema: Schema = new Schema({
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: false,
+    default: '',
   },
   sourceType: {
     type: String,
@@ -30,6 +35,22 @@ const LeadSchema: Schema = new Schema({
   },
   sourceUrl: {
     type: String,
+    required: false,
+  },
+  city: {
+    type: String,
+    required: false,
+  },
+  address: {
+    type: String,
+    required: false,
+  },
+  message: {
+    type: String,
+    required: false,
+  },
+  details: {
+    type: Schema.Types.Mixed,
     required: false,
   },
   status: {

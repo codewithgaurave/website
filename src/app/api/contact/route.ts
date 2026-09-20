@@ -6,15 +6,17 @@ import nodemailer from 'nodemailer';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, email, sourceType, sourceUrl } = body;
+    const { name, phone, email, sourceType, sourceUrl, city, address, message, details } = body;
 
     // Basic Validation
-    if (!name || !phone || !email) {
+    if (!name || !phone) {
       return NextResponse.json(
-        { success: false, message: 'Name, Phone, and Email are required fields.' },
+        { success: false, message: 'Name and Phone are required fields.' },
         { status: 400 }
       );
     }
+
+    const safeEmail = email || `${phone.replace(/\D/g, '')}@zomocook.in`;
 
     // Connect to MongoDB
     await connectToDatabase();
@@ -23,9 +25,13 @@ export async function POST(request: Request) {
     const newLead = await Lead.create({
       name,
       phone,
-      email,
+      email: safeEmail,
       sourceType: sourceType || 'General Contact',
       sourceUrl: sourceUrl || 'Unknown',
+      city: city || '',
+      address: address || '',
+      message: message || '',
+      details: details || null,
     });
 
     // Nodemailer Email Notification to Admin

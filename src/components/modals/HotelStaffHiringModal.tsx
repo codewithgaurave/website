@@ -2,10 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Plus, Trash2, ArrowRight, ArrowLeft, 
-  ShieldCheck, CheckCircle2, Store, Home, Calendar, 
-  ChefHat, Phone, User, MapPin, Clock, AlertCircle, 
-  Loader2, IndianRupee, Sparkles, PartyPopper, Utensils,
-  CalendarDays, Tag
+  CheckCircle2, Loader2, Calendar, Utensils
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getApiBaseUrl } from '@/lib/apiConfig';
@@ -36,10 +33,27 @@ interface DailyStaffItem {
   days: number;
 }
 
-interface PartyDateItem {
-  id: string;
+export interface PartyMealCategoryCount {
+  starter: number;
+  mainCourse: number;
+  breads: number;
+  rice: number;
+  drinks: number;
+  sides: number;
+}
+
+export interface PartyMealItem {
+  name: string; // 'Breakfast' | 'Lunch' | 'Dinner'
+  guests: number;
+  menuMode: 'now' | 'later' | null;
+  menu: string[];
+  categories: PartyMealCategoryCount;
+}
+
+export interface PartyDateEvent {
   date: string;
-  meals: string[]; // 'Breakfast' | 'Lunch' | 'Dinner'
+  eventType: string;
+  meals: PartyMealItem[];
 }
 
 const commercialServiceCategories = [
@@ -113,7 +127,6 @@ const cookLevels = [
 ];
 
 const foodPreferences = ['Vegetarian', 'Non-Vegetarian', 'Vegan', 'Jain Food', 'Both Veg & Non-Veg'];
-const genderPreferences = ['Male', 'Female', 'Anyone'];
 const serviceDurations = ['10 Hours', '24 Hours (Live-in)'];
 const familyMemberOptions = ['1-2 Members', '3-4 Members', '5-6 Members', '7+ Members'];
 
@@ -128,59 +141,120 @@ const dailyRoles = [
   { role: 'Head Chef', rate: 3499 }
 ];
 
-// Party constants
+// Party constants & Catalog matching reference HTML
 const occasionTypes = [
   'Birthday Party',
   'Anniversary',
   'Wedding',
   'Engagement',
-  'Kitty Party',
-  'House Party',
   'Corporate Event',
-  'Festival / Religious Event',
-  'Family Function',
+  'House Party',
+  'Festival',
   'Other'
 ];
 
-const partyCuisinesList = [
-  'Indian',
-  'Chinese',
-  'South Indian',
-  'Mughlai',
-  'Continental',
-  'Other'
-];
+const GUEST_RATE = 55;
 
-const breakfastMenuOptions = [
-  'Poha',
-  'Aloo Paratha',
-  'Paneer Paratha',
-  'Idli',
-  'Upma',
-  'Chole Bhature',
-  'Poori Bhaji',
-  'Masala Dosa'
-];
+const CATEGORY_RATES: { [key: string]: number } = {
+  starter: 250,
+  mainCourse: 250,
+  breads: 150,
+  rice: 200,
+  drinks: 100,
+  sides: 100
+};
 
-const lunchMenuOptions = [
-  'Dal Tadka',
-  'Shahi Paneer',
-  'Mix Veg',
-  'Jeera Rice',
-  'Veg Biryani',
-  'Raita',
-  'Salad'
-];
+const PLATFORM_FEE_PERCENT = 10;
+const GST_PERCENT = 18;
+const COUPON_PERCENT = 20;
 
-const dinnerMenuOptions = [
-  'Dal Makhani',
-  'Paneer Butter Masala',
-  'Kadhai Paneer',
-  'Veg Biryani',
-  'Naan',
-  'Butter Roti',
-  'Raita',
-  'Salad'
+export interface MenuItemCatalog {
+  name: string;
+  category: string;
+  image: string;
+}
+
+const menuCatalog: MenuItemCatalog[] = [
+  {
+    name: "Poha",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
+  },
+  {
+    name: "Sandwich",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=200"
+  },
+  {
+    name: "Aloo Paratha",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
+  },
+  {
+    name: "Roti",
+    category: "Bread",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+  {
+    name: "Dal",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200"
+  },
+  {
+    name: "Rice",
+    category: "Rice",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
+  },
+  {
+    name: "Sabji",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+  {
+    name: "Egg Curry",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+  {
+    name: "Chicken Curry",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200"
+  },
+  {
+    name: "Paneer Butter Masala",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200"
+  },
+  {
+    name: "Dal Makhani",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200"
+  },
+  {
+    name: "Jeera Rice",
+    category: "Rice",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
+  },
+  {
+    name: "Naan",
+    category: "Bread",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
+  },
+  {
+    name: "Tea / Coffee",
+    category: "Drinks",
+    image: "https://images.unsplash.com/photo-1512568400610-62da28bc8a13?w=200"
+  },
+  {
+    name: "Fruit Salad",
+    category: "Sides",
+    image: "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=200"
+  },
+  {
+    name: "Gulab Jamun",
+    category: "Dessert",
+    image: "https://images.unsplash.com/photo-1601303516534-4d1b5d9f2c15?w=200"
+  }
 ];
 
 export default function HotelStaffHiringModal({ isOpen, onClose, initialService = 'commercial' }: HotelStaffHiringModalProps) {
@@ -190,6 +264,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   // Common User & Auth states
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [city, setCity] = useState('Lucknow');
   const [otpSent, setOtpSent] = useState(false);
   const [otpValue, setOtpValue] = useState('');
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -242,25 +318,34 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   });
   const [dailyAgreeTerms, setDailyAgreeTerms] = useState(true);
 
-  // 4. Party Chef State (5 Steps as per reference)
+  // 4. Party Chef State (Dynamic 5-Step multi-date & multi-meal system)
   const [partyVenueAddress, setPartyVenueAddress] = useState('');
-  const [partyOccasionType, setPartyOccasionType] = useState('Birthday Party');
-  const [partyDatesList, setPartyDatesList] = useState<PartyDateItem[]>([
+  const [partyNewDateInput, setPartyNewDateInput] = useState('');
+  const [partyDates, setPartyDates] = useState<PartyDateEvent[]>([
     {
-      id: '1',
       date: new Date().toISOString().split('T')[0],
-      meals: ['Dinner']
+      eventType: 'Birthday Party',
+      meals: [
+        {
+          name: 'Dinner',
+          guests: 20,
+          menuMode: null,
+          menu: [],
+          categories: { starter: 0, mainCourse: 0, breads: 0, rice: 0, drinks: 0, sides: 0 }
+        }
+      ]
     }
   ]);
-  const [partySelectedCuisine, setPartySelectedCuisine] = useState<string>('Indian');
-  const [partyChooseLater, setPartyChooseLater] = useState<boolean>(false);
-  const [partyBreakfastItems, setPartyBreakfastItems] = useState<string[]>(['Paneer Paratha', 'Poha']);
-  const [partyLunchItems, setPartyLunchItems] = useState<string[]>(['Dal Tadka', 'Shahi Paneer', 'Jeera Rice']);
-  const [partyDinnerItems, setPartyDinnerItems] = useState<string[]>(['Dal Makhani', 'Paneer Butter Masala', 'Naan']);
-  const [partyGuestCount, setPartyGuestCount] = useState<string>('25');
-  const [partyCouponCode, setPartyCouponCode] = useState<string>('');
-  const [partyCouponDiscount, setPartyCouponDiscount] = useState<number>(0);
-  const [partyAgreeTerms, setPartyAgreeTerms] = useState<boolean>(true);
+
+  // Menu Modal State for Party Chef
+  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  const [activeDateIndex, setActiveDateIndex] = useState<number | null>(null);
+  const [activeMealIndex, setActiveMealIndex] = useState<number | null>(null);
+  const [tempSelectedMenu, setTempSelectedMenu] = useState<string[]>([]);
+
+  // Payment Method and Terms
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking' | 'wallet'>('card');
+  const [partyAgreeTerms, setPartyAgreeTerms] = useState<boolean>(false);
 
   // Global Submission & Success
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -298,6 +383,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           if (parsed.phone) {
             setPhone(parsed.phone);
             setName(parsed.name || '');
+            if (parsed.email) setEmail(parsed.email);
             setIsPhoneVerified(true);
             setUserToken(storedToken);
           }
@@ -308,6 +394,21 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
   if (!isOpen) return null;
 
+  // Date Formatting Helper
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'Select Date';
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   // Handle Send OTP
   const handleSendOtp = async () => {
     const cleanPhone = phone.trim().replace(/\D/g, '');
@@ -316,7 +417,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         icon: 'warning',
         title: 'Mobile Number Required',
         text: 'Please enter a valid 10-digit mobile number.',
-        confirmButtonColor: '#d62423'
+        confirmButtonColor: '#0866ed'
       });
       return;
     }
@@ -336,14 +437,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           icon: 'success',
           title: 'OTP Sent!',
           text: `OTP has been sent to ${cleanPhone}.`,
-          confirmButtonColor: '#d62423'
+          confirmButtonColor: '#0866ed'
         });
       } else {
         Swal.fire({
           icon: 'error',
           title: 'Failed to Send OTP',
           text: data.message || 'Please check the mobile number and try again.',
-          confirmButtonColor: '#d62423'
+          confirmButtonColor: '#0866ed'
         });
       }
     } catch (err: any) {
@@ -351,7 +452,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         icon: 'error',
         title: 'Network Error',
         text: 'Unable to connect to SMS server. Please try again later.',
-        confirmButtonColor: '#d62423'
+        confirmButtonColor: '#0866ed'
       });
     } finally {
       setIsSendingOtp(false);
@@ -365,7 +466,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         icon: 'warning',
         title: 'Enter OTP',
         text: 'Please enter the 6-digit verification code.',
-        confirmButtonColor: '#d62423'
+        confirmButtonColor: '#0866ed'
       });
       return;
     }
@@ -412,7 +513,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           icon: 'error',
           title: 'Invalid OTP',
           text: data.message || 'Please enter the correct 6-digit OTP.',
-          confirmButtonColor: '#d62423'
+          confirmButtonColor: '#0866ed'
         });
       }
     } catch (err: any) {
@@ -420,54 +521,283 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         icon: 'error',
         title: 'Verification Failed',
         text: err.message || 'Unable to connect to server. Please try again.',
-        confirmButtonColor: '#d62423'
+        confirmButtonColor: '#0866ed'
       });
     } finally {
       setIsVerifyingOtp(false);
     }
   };
 
+  // Party Date Management
+  const addPartyDate = () => {
+    if (!partyNewDateInput) {
+      Swal.fire({ icon: 'warning', title: 'Select Date', text: 'Please select a date first.', confirmButtonColor: '#0866ed' });
+      return;
+    }
+    if (partyDates.some(p => p.date === partyNewDateInput)) {
+      Swal.fire({ icon: 'info', title: 'Already Added', text: 'This date is already selected.', confirmButtonColor: '#0866ed' });
+      return;
+    }
+    setPartyDates(prev => [
+      ...prev,
+      {
+        date: partyNewDateInput,
+        eventType: 'Birthday Party',
+        meals: [
+          {
+            name: 'Dinner',
+            guests: 20,
+            menuMode: null,
+            menu: [],
+            categories: { starter: 0, mainCourse: 0, breads: 0, rice: 0, drinks: 0, sides: 0 }
+          }
+        ]
+      }
+    ]);
+    setPartyNewDateInput('');
+  };
+
+  const removePartyDate = (idx: number) => {
+    setPartyDates(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const updatePartyEventType = (dateIdx: number, newType: string) => {
+    setPartyDates(prev => prev.map((p, i) => i === dateIdx ? { ...p, eventType: newType } : p));
+  };
+
+  const addSpecificMeal = (dateIdx: number, mealName: string) => {
+    setPartyDates(prev => prev.map((p, i) => {
+      if (i !== dateIdx) return p;
+      if (p.meals.some(m => m.name === mealName)) {
+        Swal.fire({ icon: 'info', title: 'Meal Exists', text: `${mealName} is already added for this day.`, confirmButtonColor: '#0866ed' });
+        return p;
+      }
+      return {
+        ...p,
+        meals: [
+          ...p.meals,
+          {
+            name: mealName,
+            guests: 20,
+            menuMode: null,
+            menu: [],
+            categories: { starter: 0, mainCourse: 0, breads: 0, rice: 0, drinks: 0, sides: 0 }
+          }
+        ]
+      };
+    }));
+  };
+
+  const addNextAvailableMeal = (dateIdx: number) => {
+    const existing = partyDates[dateIdx]?.meals.map(m => m.name) || [];
+    const available = ['Breakfast', 'Lunch', 'Dinner'].filter(m => !existing.includes(m));
+    if (available.length === 0) {
+      Swal.fire({ icon: 'info', title: 'All Meals Added', text: 'All meals (Breakfast, Lunch, Dinner) are already selected for this date.', confirmButtonColor: '#0866ed' });
+      return;
+    }
+    addSpecificMeal(dateIdx, available[0]);
+  };
+
+  const removePartyMeal = (dateIdx: number, mealIdx: number) => {
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== dateIdx) return p;
+      return { ...p, meals: p.meals.filter((_, mI) => mI !== mealIdx) };
+    }));
+  };
+
+  const changePartyGuests = (dateIdx: number, mealIdx: number, delta: number) => {
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== dateIdx) return p;
+      return {
+        ...p,
+        meals: p.meals.map((m, mI) => {
+          if (mI !== mealIdx) return m;
+          const newGuests = Math.max(1, m.guests + delta);
+          return { ...m, guests: newGuests };
+        })
+      };
+    }));
+  };
+
+  // Menu Mode & Items Management
+  const selectMenuMode = (dateIdx: number, mealIdx: number, mode: 'now' | 'later') => {
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== dateIdx) return p;
+      return {
+        ...p,
+        meals: p.meals.map((m, mI) => {
+          if (mI !== mealIdx) return m;
+          return { ...m, menuMode: mode };
+        })
+      };
+    }));
+  };
+
+  const resetMenuMode = (dateIdx: number, mealIdx: number) => {
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== dateIdx) return p;
+      return {
+        ...p,
+        meals: p.meals.map((m, mI) => {
+          if (mI !== mealIdx) return m;
+          return { ...m, menuMode: null };
+        })
+      };
+    }));
+  };
+
+  const changePartyCategoryCount = (dateIdx: number, mealIdx: number, catKey: keyof PartyMealCategoryCount, delta: number) => {
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== dateIdx) return p;
+      return {
+        ...p,
+        meals: p.meals.map((m, mI) => {
+          if (mI !== mealIdx) return m;
+          const current = m.categories[catKey] || 0;
+          const nextVal = Math.max(0, current + delta);
+          return {
+            ...m,
+            categories: {
+              ...m.categories,
+              [catKey]: nextVal
+            }
+          };
+        })
+      };
+    }));
+  };
+
+  const openMenuModal = (dateIdx: number, mealIdx: number) => {
+    setActiveDateIndex(dateIdx);
+    setActiveMealIndex(mealIdx);
+    const existing = partyDates[dateIdx]?.meals[mealIdx]?.menu || [];
+    setTempSelectedMenu([...existing]);
+    setIsMenuModalOpen(true);
+  };
+
+  const toggleMenuItemSelection = (itemName: string) => {
+    setTempSelectedMenu(prev => 
+      prev.includes(itemName) ? prev.filter(x => x !== itemName) : [...prev, itemName]
+    );
+  };
+
+  const saveMenuModalItems = () => {
+    if (activeDateIndex === null || activeMealIndex === null) return;
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== activeDateIndex) return p;
+      return {
+        ...p,
+        meals: p.meals.map((m, mI) => {
+          if (mI !== activeMealIndex) return m;
+          return { ...m, menu: [...tempSelectedMenu] };
+        })
+      };
+    }));
+    setIsMenuModalOpen(false);
+  };
+
+  const removeSingleMenuItem = (dateIdx: number, mealIdx: number, itemName: string) => {
+    setPartyDates(prev => prev.map((p, dI) => {
+      if (dI !== dateIdx) return p;
+      return {
+        ...p,
+        meals: p.meals.map((m, mI) => {
+          if (mI !== mealIdx) return m;
+          return { ...m, menu: m.menu.filter(x => x !== itemName) };
+        })
+      };
+    }));
+  };
+
+  // Party Calculation logic exactly matching reference
+  const calculatePartyPricing = () => {
+    let menuTotal = 0;
+    let guestTotal = 0;
+
+    partyDates.forEach(event => {
+      event.meals.forEach(meal => {
+        let mealMenuCharge = 0;
+        if (meal.menuMode === 'now') {
+          mealMenuCharge = meal.menu.length * CATEGORY_RATES.mainCourse;
+        } else if (meal.menuMode === 'later') {
+          const c = meal.categories;
+          mealMenuCharge = (c.starter || 0) * CATEGORY_RATES.starter
+            + (c.mainCourse || 0) * CATEGORY_RATES.mainCourse
+            + (c.breads || 0) * CATEGORY_RATES.breads
+            + (c.rice || 0) * CATEGORY_RATES.rice
+            + (c.drinks || 0) * CATEGORY_RATES.drinks
+            + (c.sides || 0) * CATEGORY_RATES.sides;
+        }
+        const mealGuestCharge = (meal.guests || 0) * GUEST_RATE;
+        menuTotal += mealMenuCharge;
+        guestTotal += mealGuestCharge;
+      });
+    });
+
+    const subtotal = menuTotal + guestTotal;
+    const discount = Math.round(subtotal * (COUPON_PERCENT / 100));
+    const discountedAmount = Math.max(0, subtotal - discount);
+    const platformFee = Math.round(discountedAmount * (PLATFORM_FEE_PERCENT / 100));
+    const taxable = discountedAmount + platformFee;
+    const gst = Math.round(taxable * (GST_PERCENT / 100));
+    const finalAmount = taxable + gst;
+    const advanceAmount = finalAmount; // or 25% if configured, here final amount
+
+    return {
+      menuTotal,
+      guestTotal,
+      subtotal,
+      discount,
+      platformFee,
+      gst,
+      finalAmount,
+      advanceAmount
+    };
+  };
+
+  const partyPricing = calculatePartyPricing();
+
   // Step 1 Validation across tabs
   const handleProceedToStep2 = () => {
     if (!name.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Name Required', text: 'Please enter your full name.', confirmButtonColor: '#d62423' });
+      Swal.fire({ icon: 'warning', title: 'Name Required', text: 'Please enter your full name.', confirmButtonColor: '#0866ed' });
       return;
     }
     if (!phone || phone.length < 10) {
-      Swal.fire({ icon: 'warning', title: 'Phone Required', text: 'Please enter your 10-digit mobile number.', confirmButtonColor: '#d62423' });
+      Swal.fire({ icon: 'warning', title: 'Phone Required', text: 'Please enter your 10-digit mobile number.', confirmButtonColor: '#0866ed' });
       return;
     }
     if (!isPhoneVerified) {
-      Swal.fire({ icon: 'warning', title: 'Verification Required', text: 'Please verify your mobile number with OTP first.', confirmButtonColor: '#d62423' });
+      Swal.fire({ icon: 'warning', title: 'Verification Required', text: 'Please verify your mobile number with OTP first.', confirmButtonColor: '#0866ed' });
       return;
     }
 
     if (activeTab === 'commercial') {
       if (!commercialBusinessName.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Business Name Required', text: 'Please enter your restaurant / hotel / business name.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Business Name Required', text: 'Please enter your restaurant / hotel / business name.', confirmButtonColor: '#0866ed' });
         return;
       }
       if (!commercialAddress.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Business Address Required', text: 'Please enter complete business address.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Business Address Required', text: 'Please enter complete business address.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'homecook') {
       if (!homeAddress.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Home Address Required', text: 'Please enter your residential address.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Home Address Required', text: 'Please enter your residential address.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'daily') {
       if (!dailyOutletName.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Outlet / Event Name Required', text: 'Please enter your outlet or event name.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Outlet / Event Name Required', text: 'Please enter your outlet or event name.', confirmButtonColor: '#0866ed' });
         return;
       }
       if (!dailyAddress.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Address Required', text: 'Please enter location / address.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Address Required', text: 'Please enter location / address.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'party') {
       if (!partyVenueAddress.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Address Required', text: 'Please enter party venue / complete address.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Address Required', text: 'Please enter party venue / complete address.', confirmButtonColor: '#0866ed' });
         return;
       }
     }
@@ -479,30 +809,39 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const handleProceedToStep3 = () => {
     if (activeTab === 'commercial') {
       if (commercialStaffList.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Staff Required', text: 'Please add at least 1 staff requirement.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Staff Required', text: 'Please add at least 1 staff requirement.', confirmButtonColor: '#0866ed' });
         return;
       }
       if (!commercialAgreeTerms) {
-        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the salary and terms.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the salary and terms.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'homecook') {
       if (!homeAgreeTerms) {
-        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the terms & conditions.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the terms & conditions.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'daily') {
       if (!dailyAgreeTerms) {
-        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the booking terms.', confirmButtonColor: '#d62423' });
+        Swal.fire({ icon: 'warning', title: 'Agreement Required', text: 'Please agree to the booking terms.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'party') {
-      if (partyDatesList.length === 0 || !partyDatesList[0].date) {
-        Swal.fire({ icon: 'warning', title: 'Date Required', text: 'Please select occasion date.', confirmButtonColor: '#d62423' });
+      if (partyDates.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Select Date', text: 'Please select at least one event date.', confirmButtonColor: '#0866ed' });
         return;
       }
-      if (partyDatesList.some(d => d.meals.length === 0)) {
-        Swal.fire({ icon: 'warning', title: 'Meal Required', text: 'Please select at least 1 meal (Breakfast, Lunch or Dinner).', confirmButtonColor: '#d62423' });
+      let valid = true;
+      partyDates.forEach(event => {
+        if (!event.date || event.meals.length === 0) {
+          valid = false;
+        }
+        event.meals.forEach(meal => {
+          if (!meal.guests || meal.guests < 1) valid = false;
+        });
+      });
+      if (!valid) {
+        Swal.fire({ icon: 'warning', title: 'Meal Required', text: 'Please select a meal and guest count for every date.', confirmButtonColor: '#0866ed' });
         return;
       }
     }
@@ -513,8 +852,31 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   // Step 3 Validation for Party Chef
   const handleProceedToStep4 = () => {
     if (activeTab === 'party') {
-      if (!partyGuestCount || parseInt(partyGuestCount) < 1) {
-        Swal.fire({ icon: 'warning', title: 'Guest Count Required', text: 'Please enter the number of guests.', confirmButtonColor: '#d62423' });
+      let valid = true;
+      partyDates.forEach(event => {
+        event.meals.forEach(meal => {
+          if (!meal.menuMode) {
+            valid = false;
+          }
+          if (meal.menuMode === 'now' && meal.menu.length === 0) {
+            valid = false;
+          }
+          if (meal.menuMode === 'later') {
+            const totalItems = Object.values(meal.categories).reduce((sum, val) => sum + val, 0);
+            if (totalItems === 0) {
+              valid = false;
+            }
+          }
+        });
+      });
+
+      if (!valid) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Menu Incomplete',
+          text: 'Please select a menu option and configure dishes/quantities for every meal.',
+          confirmButtonColor: '#0866ed'
+        });
         return;
       }
     }
@@ -528,21 +890,23 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const dailyTotalAmount = dailyStaffAmount + dailyGst + dailyPlatformFee;
   const dailyAdvanceAmount = Math.round(dailyTotalAmount * 0.25);
 
-  // Party Chef calculations
-  const totalPartyMeals = partyDatesList.reduce((acc, curr) => acc + curr.meals.length, 0);
-  const partyCookingCharges = Math.max(1924, totalPartyMeals * 999);
-  const partyGst = Math.round(partyCookingCharges * 0.18);
-  const partyPlatformFee = Math.round(partyCookingCharges * 0.10);
-  const partyGrandTotal = Math.max(0, partyCookingCharges + partyGst + partyPlatformFee - partyCouponDiscount);
-  const partyAdvanceAmount = Math.round(partyGrandTotal * 0.25);
-
-  // Trigger Live Cashfree Checkout
+  // Trigger Live Backend Booking & Payment
   const handleFinalSubmitAndPay = async () => {
+    if (activeTab === 'party' && !partyAgreeTerms) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Agreement Required',
+        text: 'Please accept the booking terms and cancellation policy.',
+        confirmButtonColor: '#0866ed'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     let amountToPay = 299;
-    let sourceType = 'Commercial Staff Hiring (₹299 Processing Fee)';
+    let sourceType = 'Chef for Party Booking';
     let summaryMessage = '';
-    let payloadEndpoint = `${API_BASE}/api/jobs/web-commercial-booking`;
+    const payloadEndpoint = `${API_BASE}/api/jobs/web-commercial-booking`;
     let requestPayload: any = {};
 
     if (activeTab === 'commercial') {
@@ -554,6 +918,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         jobCategory: 'hotel',
         name: name.trim(),
         phone: phone.trim().replace(/\D/g, ''),
+        email: email.trim(),
+        city: city.trim(),
         address: commercialAddress.trim(),
         outletName: commercialBusinessName.trim(),
         facilities: selectedFacilities,
@@ -574,6 +940,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         jobCategory: 'home',
         name: name.trim(),
         phone: phone.trim().replace(/\D/g, ''),
+        email: email.trim(),
+        city: city.trim(),
         address: homeAddress.trim(),
         foodPreference: homeFoodPref,
         cookType: selectedLevel?.name,
@@ -591,6 +959,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         bookingType: 'daily',
         name: name.trim(),
         phone: phone.trim().replace(/\D/g, ''),
+        email: email.trim(),
+        city: city.trim(),
         outletName: dailyOutletName.trim(),
         address: dailyAddress.trim(),
         dailyRequirement: dailyStaffRequirement,
@@ -603,32 +973,34 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         }
       };
     } else if (activeTab === 'party') {
-      amountToPay = partyAdvanceAmount;
-      sourceType = 'Chef for Party / Occasion (25% Advance Booking)';
-      summaryMessage = `Venue: ${partyVenueAddress}, Occasion: ${partyOccasionType}, Guests: ${partyGuestCount}, Cuisine: ${partySelectedCuisine}, Dates: ${partyDatesList.map(d => `${d.date} (${d.meals.join(', ')})`).join(' | ')}, Total: ₹${partyGrandTotal}, Advance: ₹${partyAdvanceAmount}`;
+      amountToPay = partyPricing.finalAmount;
+      sourceType = 'Chef for Party Booking (5-Step Master Flow)';
+      summaryMessage = `City: ${city}, Address: ${partyVenueAddress}, Dates: ${partyDates.map((d, i) => `Day ${i + 1} (${d.date} - ${d.eventType}): ${d.meals.map(m => `${m.name} [Guests: ${m.guests}, Mode: ${m.menuMode || 'none'}, Items: ${m.menuMode === 'now' ? m.menu.join(', ') : JSON.stringify(m.categories)}]`).join('; ')}`).join(' | ')}, Menu Charges: ₹${partyPricing.menuTotal}, Guests Charges: ₹${partyPricing.guestTotal}, Total: ₹${partyPricing.finalAmount}, Payment Mode: ${paymentMethod}`;
+
       requestPayload = {
         jobCategory: 'home',
         bookingType: 'party',
         name: name.trim(),
         phone: phone.trim().replace(/\D/g, ''),
+        email: email.trim() || `${phone.replace(/\D/g, '')}@zomocook.in`,
+        city: city.trim(),
         address: partyVenueAddress.trim(),
         partyRequirement: {
-          occasion: partyOccasionType,
-          guests: partyGuestCount,
-          cuisine: partySelectedCuisine,
-          chooseLater: partyChooseLater,
-          dates: partyDatesList,
-          breakfastMenu: partyBreakfastItems,
-          lunchMenu: partyLunchItems,
-          dinnerMenu: partyDinnerItems
+          city: city.trim(),
+          paymentMethod,
+          dates: partyDates,
+          datesCount: partyDates.length,
+          pricingBreakdown: partyPricing
         },
         pricing: {
-          cookingCharges: partyCookingCharges,
-          gst: partyGst,
-          platformFee: partyPlatformFee,
-          discount: partyCouponDiscount,
-          totalAmount: partyGrandTotal,
-          advance: partyAdvanceAmount
+          menuCharges: partyPricing.menuTotal,
+          guestCharges: partyPricing.guestTotal,
+          subtotal: partyPricing.subtotal,
+          discount: partyPricing.discount,
+          platformFee: partyPricing.platformFee,
+          gst: partyPricing.gst,
+          totalAmount: partyPricing.finalAmount,
+          advance: partyPricing.advanceAmount
         }
       };
     }
@@ -637,20 +1009,54 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       let generatedRef = `ZOMO-${Math.floor(100000 + Math.random() * 900000)}`;
 
       // 1. Send to Backend Lead / Job API
-      const res = await fetch(payloadEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(userToken && { 'Authorization': `Bearer ${userToken}` })
-        },
-        body: JSON.stringify(requestPayload)
-      });
-      const data = await res.json();
-      if (data.jobs && data.jobs[0]?.jobCode) {
-        generatedRef = data.jobs[0].jobCode;
+      try {
+        const res = await fetch(payloadEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(userToken && { 'Authorization': `Bearer ${userToken}` })
+          },
+          body: JSON.stringify(requestPayload)
+        });
+        const data = await res.json();
+        if (data.jobs && data.jobs[0]?.jobCode) {
+          generatedRef = data.jobs[0].jobCode;
+        }
+
+        // 2. Open Live Cashfree Checkout if paymentSessionId returned
+        if (data.paymentSessionId && typeof (window as any).Cashfree !== 'undefined') {
+          const cfEnv = (data.environment === 'SANDBOX' || data.environment === 'TEST') ? 'sandbox' : 'production';
+          const cashfree = (window as any).Cashfree({ mode: cfEnv });
+
+          cashfree.checkout({
+            paymentSessionId: data.paymentSessionId,
+            redirectTarget: '_modal'
+          }).then((result: any) => {
+            if (result.error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Payment Incomplete',
+                text: `Payment was not completed. Please complete payment to confirm your booking.`,
+                confirmButtonColor: '#0866ed'
+              });
+            } else {
+              setBookingRef(generatedRef);
+              setBookingSuccess(true);
+              Swal.fire({
+                icon: 'success',
+                title: 'Booking Confirmed!',
+                text: `Your chef booking request #${generatedRef} has been confirmed.`,
+                confirmButtonColor: '#0866ed'
+              });
+            }
+          });
+          return;
+        }
+      } catch (e) {
+        console.error('Job API error:', e);
       }
 
-      // Also record in Leads
+      // Also record in Next.js MongoDB Leads
       try {
         await fetch('/api/contact', {
           method: 'POST',
@@ -658,1396 +1064,1456 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           body: JSON.stringify({
             name,
             phone,
-            email: `${phone}@zomocook.in`,
+            email: email.trim() || `${phone.replace(/\D/g, '')}@zomocook.in`,
+            city,
+            address: activeTab === 'party' ? partyVenueAddress : commercialAddress || homeAddress || dailyAddress,
             sourceType,
-            message: summaryMessage
+            message: summaryMessage,
+            details: requestPayload
           })
         });
       } catch (err) {}
 
-      // 2. Open Live Cashfree Checkout
-      if (data.paymentSessionId && typeof (window as any).Cashfree !== 'undefined') {
-        const cfEnv = (data.environment === 'SANDBOX' || data.environment === 'TEST') ? 'sandbox' : 'production';
-        const cashfree = (window as any).Cashfree({ mode: cfEnv });
-
-        cashfree.checkout({
-          paymentSessionId: data.paymentSessionId,
-          redirectTarget: '_modal'
-        }).then((result: any) => {
-          if (result.error) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Payment Incomplete',
-              text: `Payment was not completed. Please complete ₹${amountToPay} payment to confirm your request.`,
-              confirmButtonColor: '#d62423'
-            });
-          } else {
-            setBookingRef(generatedRef);
-            setBookingSuccess(true);
-            Swal.fire({
-              icon: 'success',
-              title: 'Booking Confirmed!',
-              text: `Your request #${generatedRef} has been confirmed. Our team is processing verified staff profiles for you.`,
-              confirmButtonColor: '#d62423'
-            });
-          }
-        });
-      } else {
-        // Fallback confirmation
-        setBookingRef(generatedRef);
-        setBookingSuccess(true);
-        Swal.fire({
-          icon: 'success',
-          title: 'Request Submitted!',
-          text: `Your requirement #${generatedRef} has been registered. Our representative will contact you right away.`,
-          confirmButtonColor: '#d62423'
-        });
-      }
-
+      // Fallback confirmation
+      setBookingRef(generatedRef);
+      setBookingSuccess(true);
+      Swal.fire({
+        icon: 'success',
+        title: 'Booking Confirmed!',
+        text: `Your Chef booking #${generatedRef} has been received successfully. Our team will connect with you immediately.`,
+        confirmButtonColor: '#0866ed'
+      });
     } catch (err: any) {
       Swal.fire({
         icon: 'error',
-        title: 'Submission Error',
-        text: err.message || 'Something went wrong. Please try again.',
-        confirmButtonColor: '#d62423'
+        title: 'Booking Notice',
+        text: err.message || 'Booking details recorded. Our team will contact you shortly.',
+        confirmButtonColor: '#0866ed'
       });
+      setBookingSuccess(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Helper toggle meal on date
-  const handleToggleMeal = (dateId: string, meal: string) => {
-    setPartyDatesList(prev => prev.map(d => {
-      if (d.id === dateId) {
-        const exists = d.meals.includes(meal);
-        const updatedMeals = exists ? d.meals.filter(m => m !== meal) : [...d.meals, meal];
-        return { ...d, meals: updatedMeals };
-      }
-      return d;
-    }));
-  };
-
-  // Helper toggle menu item
-  const handleToggleMenuItem = (mealType: 'breakfast' | 'lunch' | 'dinner', item: string) => {
-    if (mealType === 'breakfast') {
-      setPartyBreakfastItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
-    } else if (mealType === 'lunch') {
-      setPartyLunchItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
-    } else {
-      setPartyDinnerItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
-    }
-  };
-
   const isPartyTab = activeTab === 'party';
-  const totalPartySteps = isPartyTab ? 5 : 4;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[94vh] flex flex-col font-sans">
-        
-        {/* Top Header */}
-        <div className="relative px-6 pt-5 pb-3 border-b border-slate-100 text-center bg-white">
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
-          <div className="flex items-center justify-center mb-0.5">
-            <span className="text-[22px] font-black text-[#0f2441] tracking-tight">Zomo</span>
-            <span className="text-[22px] font-black text-[#d62423] tracking-tight">Cook</span>
-          </div>
-          <p className="text-[12px] font-semibold text-slate-400">
-            {isPartyTab ? 'Book a professional chef for your special occasion' : 'Hire the right staff for your business'}
-          </p>
-        </div>
-
-        {/* 4 Service Cards/Tabs at Top */}
-        {!bookingSuccess && (
-          <div className="px-5 sm:px-6 py-3 bg-slate-50/80 border-b border-slate-100">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {/* Tab 1: Commercial */}
-              <button
-                type="button"
-                onClick={() => { setActiveTab('commercial'); setStep(1); }}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[12.5px] transition-all border ${
-                  activeTab === 'commercial'
-                    ? 'bg-[#0866e8] text-white border-[#0866e8] shadow-md shadow-blue-500/20'
-                    : 'bg-white text-slate-700 border-slate-200/80 hover:border-slate-300 hover:bg-white/80'
-                }`}
-              >
-                <Store className={`w-4 h-4 shrink-0 ${activeTab === 'commercial' ? 'text-white' : 'text-[#0866e8]'}`} />
-                <span className="truncate">Commercial Hiring</span>
-              </button>
-
-              {/* Tab 2: Domestic Home Cook */}
-              <button
-                type="button"
-                onClick={() => { setActiveTab('homecook'); setStep(1); }}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[12.5px] transition-all border ${
-                  activeTab === 'homecook'
-                    ? 'bg-[#0866e8] text-white border-[#0866e8] shadow-md shadow-blue-500/20'
-                    : 'bg-white text-slate-700 border-slate-200/80 hover:border-slate-300 hover:bg-white/80'
-                }`}
-              >
-                <Home className={`w-4 h-4 shrink-0 ${activeTab === 'homecook' ? 'text-white' : 'text-[#ed1c24]'}`} />
-                <span className="truncate">Domestic Home Cook</span>
-              </button>
-
-              {/* Tab 3: Daily Basis Staff */}
-              <button
-                type="button"
-                onClick={() => { setActiveTab('daily'); setStep(1); }}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[12.5px] transition-all border ${
-                  activeTab === 'daily'
-                    ? 'bg-[#0866e8] text-white border-[#0866e8] shadow-md shadow-blue-500/20'
-                    : 'bg-white text-slate-700 border-slate-200/80 hover:border-slate-300 hover:bg-white/80'
-                }`}
-              >
-                <Calendar className={`w-4 h-4 shrink-0 ${activeTab === 'daily' ? 'text-white' : 'text-[#08b96d]'}`} />
-                <span className="truncate">Daily Basis Staff</span>
-              </button>
-
-              {/* Tab 4: Chef for Party */}
-              <button
-                type="button"
-                onClick={() => { setActiveTab('party'); setStep(1); }}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[12.5px] transition-all border ${
-                  activeTab === 'party'
-                    ? 'bg-[#0866e8] text-white border-[#0866e8] shadow-md shadow-blue-500/20'
-                    : 'bg-white text-slate-700 border-slate-200/80 hover:border-slate-300 hover:bg-white/80'
-                }`}
-              >
-                <ChefHat className={`w-4 h-4 shrink-0 ${activeTab === 'party' ? 'text-white' : 'text-[#7639e8]'}`} />
-                <span className="truncate">Chef for Party</span>
-              </button>
+    <>
+      <div 
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !isSubmitting) onClose();
+        }}
+      >
+        <div 
+          className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh] border border-slate-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-20">
+            <div>
+              <div className="text-[22px] font-extrabold text-[#073b8f] tracking-tight">
+                Zomo<span className="text-[#ed1c24]">Cook</span>
+              </div>
+              <p className="text-[12px] text-slate-500 mt-0.5 font-medium">
+                Book a professional chef for your special occasion
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        )}
 
-        {/* Stepper Progress Bar */}
-        {!bookingSuccess && (
-          <div className="px-6 py-3 bg-white border-b border-slate-100">
-            {isPartyTab ? (
-              /* 5 Steps for Party */
-              <div className="flex items-center justify-between max-w-2xl mx-auto relative">
-                {[
-                  { num: 1, label: 'Basic Details' },
-                  { num: 2, label: 'Event Details' },
-                  { num: 3, label: 'Menu Details' },
-                  { num: 4, label: 'Booking Summary' },
-                  { num: 5, label: 'Payment' }
-                ].map((s, idx, arr) => (
-                  <React.Fragment key={s.num}>
-                    <div className="flex items-center gap-1.5 relative z-10">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
-                        step > s.num ? 'bg-green-500 text-white' : step === s.num ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                        {step > s.num ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
-                      </div>
-                      <span className={`text-[11.5px] font-bold hidden md:inline ${step === s.num ? 'text-[#0866e8]' : 'text-slate-500'}`}>
-                        {s.label}
-                      </span>
-                    </div>
-                    {idx < arr.length - 1 && (
-                      <div className={`flex-1 h-[2px] mx-1.5 transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            ) : (
-              /* 4 Steps for Commercial / Home / Daily */
-              <div className="flex items-center justify-between max-w-xl mx-auto relative">
-                {[
-                  { num: 1, label: 'Basic Details' },
-                  { num: 2, label: activeTab === 'commercial' ? 'Staff Requirement' : activeTab === 'homecook' ? 'Cook Details' : 'Staff Requirement' },
-                  { num: 3, label: 'Booking Summary' },
-                  { num: 4, label: activeTab === 'daily' ? 'Advance Payment' : 'Processing Fee' }
-                ].map((s, idx, arr) => (
-                  <React.Fragment key={s.num}>
-                    <div className="flex items-center gap-2 relative z-10">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                        step > s.num ? 'bg-green-500 text-white' : step === s.num ? 'bg-[#0866e8] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                        {step > s.num ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
-                      </div>
-                      <span className={`text-[12px] font-bold hidden sm:inline ${step === s.num ? 'text-[#0866e8]' : 'text-slate-500'}`}>
-                        {s.label}
-                      </span>
-                    </div>
-                    {idx < arr.length - 1 && (
-                      <div className={`flex-1 h-[2px] mx-2 transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            )}
+          {/* 4 Service Tabs */}
+          <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { id: 'commercial' as ServiceTabType, label: '🏨 Commercial Hiring' },
+              { id: 'homecook' as ServiceTabType, label: '🏠 Domestic Home Cook' },
+              { id: 'daily' as ServiceTabType, label: '📅 Daily Basis Staff' },
+              { id: 'party' as ServiceTabType, label: '👨‍🍳 Chef for Party' }
+            ].map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setStep(1);
+                    setBookingSuccess(false);
+                  }}
+                  className={`py-2 px-3 rounded-xl font-bold text-[12.5px] transition-all text-center truncate ${
+                    isActive
+                      ? 'bg-[#0866ed] text-white shadow-md'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
-        )}
 
-        {/* Modal Scrollable Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-slate-800">
+          {/* Stepper Progress Bar */}
+          {!bookingSuccess && (
+            <div className="px-6 py-3 bg-white border-b border-slate-100">
+              {isPartyTab ? (
+                /* 5 Steps for Party */
+                <div className="flex items-center justify-between max-w-2xl mx-auto relative overflow-x-auto py-1">
+                  {[
+                    { num: 1, label: 'Basic Details' },
+                    { num: 2, label: 'Event Details' },
+                    { num: 3, label: 'Menu Details' },
+                    { num: 4, label: 'Booking Summary' },
+                    { num: 5, label: 'Payment' }
+                  ].map((s, idx, arr) => (
+                    <React.Fragment key={s.num}>
+                      <div className="flex items-center gap-1.5 relative z-10 shrink-0">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${
+                          step > s.num ? 'bg-green-600 text-white' : step === s.num ? 'bg-[#0866ed] text-white shadow-sm ring-2 ring-blue-200' : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          {step > s.num ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+                        </div>
+                        <span className={`text-[12px] font-bold hidden sm:inline ${step === s.num ? 'text-[#0866ed]' : step > s.num ? 'text-green-600' : 'text-slate-400'}`}>
+                          {s.label}
+                        </span>
+                      </div>
+                      {idx < arr.length - 1 && (
+                        <div className={`flex-1 h-[2px] mx-2 min-w-[20px] transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : (
+                /* 4 Steps for Commercial / Home / Daily */
+                <div className="flex items-center justify-between max-w-xl mx-auto relative">
+                  {[
+                    { num: 1, label: 'Basic Details' },
+                    { num: 2, label: activeTab === 'commercial' ? 'Staff Requirement' : activeTab === 'homecook' ? 'Cook Details' : 'Staff Requirement' },
+                    { num: 3, label: 'Booking Summary' },
+                    { num: 4, label: activeTab === 'daily' ? 'Advance Payment' : 'Processing Fee' }
+                  ].map((s, idx, arr) => (
+                    <React.Fragment key={s.num}>
+                      <div className="flex items-center gap-2 relative z-10">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          step > s.num ? 'bg-green-500 text-white' : step === s.num ? 'bg-[#0866ed] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {step > s.num ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+                        </div>
+                        <span className={`text-[12px] font-bold hidden sm:inline ${step === s.num ? 'text-[#0866ed]' : 'text-slate-500'}`}>
+                          {s.label}
+                        </span>
+                      </div>
+                      {idx < arr.length - 1 && (
+                        <div className={`flex-1 h-[2px] mx-2 transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* ================= STEP 1: Basic Details ================= */}
-          {step === 1 && !bookingSuccess && (
-            <div className="space-y-4 animate-in fade-in">
-              <div>
-                <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">
-                  Basic Details
-                </h2>
-                <p className="text-[12.5px] text-slate-500 mt-0.5">
-                  {isPartyTab ? 'Enter your details to start your booking.' : 'Please enter your contact details to get started.'}
-                </p>
-              </div>
+          {/* Modal Scrollable Body */}
+          <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-slate-800">
 
-              <div className="space-y-3.5">
-                {/* Name */}
+            {/* ================= STEP 1: Basic Details ================= */}
+            {step === 1 && !bookingSuccess && (
+              <div className="space-y-4 animate-in fade-in">
                 <div>
-                  <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
-                  />
+                  <h2 className="text-[20px] font-extrabold text-[#132b5c] tracking-tight">
+                    Basic Details
+                  </h2>
+                  <p className="text-[13px] text-slate-500 mt-0.5">
+                    {isPartyTab ? 'Tell us about yourself and your event location.' : 'Please enter your contact details to get started.'}
+                  </p>
                 </div>
 
-                {/* Mobile Number with OTP */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[12.5px] font-bold text-slate-700">
-                      Mobile Number <span className="text-red-500">*</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                      Full Name <span className="text-red-500">*</span>
                     </label>
-                    {isPhoneVerified && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-200">
-                        <CheckCircle2 className="w-3 h-3" /> Verified
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2">
                     <input 
-                      type="tel"
-                      maxLength={10}
-                      disabled={isPhoneVerified}
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value.replace(/\D/g, ''));
-                        if (isPhoneVerified) setIsPhoneVerified(false);
-                      }}
-                      placeholder="Enter 10 digit mobile number"
-                      className={`flex-1 px-3.5 py-2.5 rounded-xl border ${
-                        isPhoneVerified ? 'bg-slate-50 text-slate-600 border-green-300' : 'border-slate-200'
-                      } focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all`}
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
                     />
-                    {!isPhoneVerified && (
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        disabled={isSendingOtp || phone.length < 10 || timer > 0}
-                        className="px-4 py-2.5 bg-[#0866e8] hover:bg-[#0652ba] disabled:bg-slate-300 text-white font-bold text-[12.5px] rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 shadow-sm"
-                      >
-                        {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : timer > 0 ? `${timer}s` : 'Send OTP'}
-                      </button>
-                    )}
                   </div>
-                </div>
 
-                {/* Inline OTP Box */}
-                {otpSent && !isPhoneVerified && (
-                  <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[12px] font-bold text-[#0866e8]">Enter 6-Digit Verification Code:</span>
-                      {timer > 0 ? (
-                        <span className="text-[11px] text-slate-500 font-medium">Resend in {timer}s</span>
-                      ) : (
-                        <button type="button" onClick={handleSendOtp} className="text-[11px] font-bold text-[#d62423] hover:underline">
-                          Resend OTP
+                  {/* Mobile Number with OTP */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[13px] font-bold text-slate-700">
+                        Mobile Number <span className="text-red-500">*</span>
+                      </label>
+                      {isPhoneVerified && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-200">
+                          <CheckCircle2 className="w-3 h-3" /> Verified
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <input 
+                        type="tel"
+                        maxLength={10}
+                        disabled={isPhoneVerified}
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value.replace(/\D/g, ''));
+                          if (isPhoneVerified) setIsPhoneVerified(false);
+                        }}
+                        placeholder="Enter 10 digit mobile number"
+                        className={`flex-1 px-3.5 py-2.5 rounded-xl border ${
+                          isPhoneVerified ? 'bg-slate-50 text-slate-600 border-green-300' : 'border-slate-200'
+                        } focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all`}
+                      />
+                      {!isPhoneVerified && (
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          disabled={isSendingOtp || phone.length < 10 || timer > 0}
+                          className="px-4 py-2.5 bg-[#0866ed] hover:bg-[#0652ba] disabled:bg-slate-300 text-white font-bold text-[12.5px] rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 shadow-sm"
+                        >
+                          {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : timer > 0 ? `${timer}s` : 'Send OTP'}
                         </button>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text"
-                        maxLength={6}
-                        value={otpValue}
-                        onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
-                        placeholder="Enter OTP"
-                        className="flex-1 px-3 py-2 rounded-lg bg-white border border-blue-200 focus:border-[#0866e8] outline-none text-center font-bold tracking-widest text-[15px]"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyOtp}
-                        disabled={isVerifyingOtp || otpValue.length < 4}
-                        className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-bold text-[12.5px] rounded-lg transition-colors flex items-center gap-1.5"
-                      >
-                        {isVerifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab Specific Fields in Step 1 */}
-                {activeTab === 'commercial' && (
-                  <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                      Business Name <span className="text-red-500">*</span>
-                    </label>
-                    <input 
-                      type="text"
-                      value={commercialBusinessName}
-                      onChange={(e) => setCommercialBusinessName(e.target.value)}
-                      placeholder="Restaurant / Hotel / Cafe / Cloud Kitchen"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
-                    />
-                  </div>
-                )}
-
-                {activeTab === 'daily' && (
-                  <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                      Outlet / Event Name <span className="text-red-500">*</span>
-                    </label>
-                    <input 
-                      type="text"
-                      value={dailyOutletName}
-                      onChange={(e) => setDailyOutletName(e.target.value)}
-                      placeholder="e.g. Royal Grand Hotel, Banquet Hall, Cafe, Private Event"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
-                    />
-                  </div>
-                )}
-
-                {/* Address Field */}
-                <div>
-                  <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                    Address <span className="text-red-500">*</span>
-                  </label>
-                  <textarea 
-                    rows={3}
-                    value={activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : activeTab === 'daily' ? dailyAddress : partyVenueAddress}
-                    onChange={(e) => {
-                      if (activeTab === 'commercial') setCommercialAddress(e.target.value);
-                      else if (activeTab === 'homecook') setHomeAddress(e.target.value);
-                      else if (activeTab === 'daily') setDailyAddress(e.target.value);
-                      else setPartyVenueAddress(e.target.value);
-                    }}
-                    placeholder="Enter complete address"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866e8] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Next Button */}
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleProceedToStep2}
-                  className="inline-flex items-center gap-2 bg-[#0866e8] hover:bg-[#0652ba] text-white px-8 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all transform hover:-translate-y-0.5"
-                >
-                  <span>Continue →</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ================= STEP 2: Event Details (Party) / Requirements ================= */}
-          {step === 2 && !bookingSuccess && (
-            <div className="space-y-4 animate-in fade-in">
-              {/* TAB 4: Chef for Party -> Step 2: Event Details */}
-              {isPartyTab ? (
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Event Details</h2>
-                    <p className="text-[12.5px] text-slate-500">
-                      Select the occasion date first, then choose the meal for that date. You can add multiple dates.
-                    </p>
                   </div>
 
-                  {/* Occasion Dates List */}
-                  <div className="space-y-3">
-                    {partyDatesList.map((dItem, index) => (
-                      <div key={dItem.id} className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-[13px] font-bold text-[#0866e8]">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#0866e8]"></span>
-                            Occasion Date {index + 1}
-                          </span>
-                          {partyDatesList.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => setPartyDatesList(prev => prev.filter(p => p.id !== dItem.id))}
-                              className="text-xs text-red-500 hover:underline flex items-center gap-1 font-semibold"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Remove
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">
-                            Select Date <span className="text-red-500">*</span>
-                          </label>
-                          <input 
-                            type="date"
-                            value={dItem.date}
-                            onChange={(e) => setPartyDatesList(prev => prev.map(p => p.id === dItem.id ? { ...p, date: e.target.value } : p))}
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 outline-none focus:border-[#0866e8]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
-                            Select Meal <span className="text-red-500">*</span>
-                          </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {['Breakfast', 'Lunch', 'Dinner'].map(meal => {
-                              const isSelected = dItem.meals.includes(meal);
-                              return (
-                                <button
-                                  key={meal}
-                                  type="button"
-                                  onClick={() => handleToggleMeal(dItem.id, meal)}
-                                  className={`py-2 px-3 rounded-xl border font-bold text-[12.5px] transition-all text-center ${
-                                    isSelected
-                                      ? 'border-[#0866e8] bg-blue-50/70 text-[#0866e8]'
-                                      : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
-                                  }`}
-                                >
-                                  {meal}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Add More Date Button */}
-                  <button
-                    type="button"
-                    onClick={() => setPartyDatesList(prev => [...prev, { id: Date.now().toString(), date: '', meals: ['Dinner'] }])}
-                    className="w-full py-2.5 border-2 border-dashed border-blue-300 text-[#0866e8] bg-blue-50/40 hover:bg-blue-50 font-bold text-[13px] rounded-xl transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" /> + Add More Date
-                  </button>
-
-                  {/* Occasion Type Dropdown */}
-                  <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                      Occasion Type <span className="text-red-500">*</span>
-                    </label>
-                    <select 
-                      value={partyOccasionType}
-                      onChange={(e) => setPartyOccasionType(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 outline-none focus:border-[#0866e8]"
-                    >
-                      {occasionTypes.map(occ => (
-                        <option key={occ} value={occ}>{occ}</option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      You can add as many occasion dates as required. Each date can have one or more meals.
-                    </p>
-                  </div>
-                </div>
-              ) : activeTab === 'commercial' ? (
-                /* TAB 1: Commercial Requirement */
-                <>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Staff Requirement</h2>
-                      <p className="text-[12.5px] text-slate-500">Select required positions for your hotel/restaurant.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setCommercialStaffList(prev => [...prev, { id: Date.now().toString(), serviceCategory: 'Kitchen Staff', staffCategory: 'Sous Chef', salaryRange: '₹20,000 - ₹25,000', noOfStaff: 1 }])}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0866e8] hover:bg-blue-100 font-bold text-[12px] rounded-lg border border-blue-200 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add Staff
-                    </button>
-                  </div>
-
-                  <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
-                    {commercialStaffList.map((item) => (
-                      <div key={item.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-                        <div className="sm:col-span-3">
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Service Category</label>
-                          <select 
-                            value={item.serviceCategory}
-                            onChange={(e) => {
-                              const newCat = e.target.value;
-                              const defaultRole = commercialStaffCategoriesMap[newCat]?.[0] || 'Head Chef';
-                              setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, serviceCategory: newCat, staffCategory: defaultRole } : s));
-                            }}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-medium text-slate-800 outline-none"
-                          >
-                            {commercialServiceCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                        </div>
-                        <div className="sm:col-span-3">
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Staff Role</label>
-                          <select 
-                            value={item.staffCategory}
-                            onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, staffCategory: e.target.value } : s))}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-medium text-slate-800 outline-none"
-                          >
-                            {(commercialStaffCategoriesMap[item.serviceCategory] || []).map(r => <option key={r} value={r}>{r}</option>)}
-                          </select>
-                        </div>
-                        <div className="sm:col-span-3">
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Salary Range</label>
-                          <select 
-                            value={item.salaryRange}
-                            onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, salaryRange: e.target.value } : s))}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-medium text-slate-800 outline-none"
-                          >
-                            {salaryRanges.map(sal => <option key={sal} value={sal}>{sal}</option>)}
-                          </select>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1">No. of Staff</label>
-                          <input 
-                            type="number"
-                            min={1}
-                            max={50}
-                            value={item.noOfStaff}
-                            onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, noOfStaff: Math.max(1, parseInt(e.target.value) || 1) } : s))}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-bold text-slate-800 outline-none text-center"
-                          />
-                        </div>
-                        <div className="sm:col-span-1 flex justify-center">
-                          <button
-                            type="button"
-                            disabled={commercialStaffList.length === 1}
-                            onClick={() => setCommercialStaffList(prev => prev.filter(s => s.id !== item.id))}
-                            className="p-2 text-slate-400 hover:text-red-500 disabled:opacity-30"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                  {/* Inline OTP Box */}
+                  {otpSent && !isPhoneVerified && (
+                    <div className="sm:col-span-2 p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[12px] font-bold text-[#0866ed]">Enter 6-Digit Verification Code:</span>
+                        {timer > 0 ? (
+                          <span className="text-[11px] text-slate-500 font-medium">Resend in {timer}s</span>
+                        ) : (
+                          <button type="button" onClick={handleSendOtp} className="text-[11px] font-bold text-[#d62423] hover:underline">
+                            Resend OTP
                           </button>
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Facilities & Terms */}
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-wrap gap-3 text-[12px] font-medium text-slate-700">
-                    <span className="font-bold text-slate-900">Perks:</span>
-                    {['food', 'accommodation', 'pf', 'esi', 'uniform'].map((fac) => (
-                      <label key={fac} className="flex items-center gap-1.5 cursor-pointer">
+                      <div className="flex gap-2">
                         <input 
-                          type="checkbox"
-                          checked={commercialFacilities[fac]}
-                          onChange={(e) => setCommercialFacilities(prev => ({ ...prev, [fac]: e.target.checked }))}
-                          className="w-3.5 h-3.5 text-[#0866e8] rounded"
+                          type="text"
+                          maxLength={6}
+                          value={otpValue}
+                          onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                          placeholder="Enter OTP"
+                          className="flex-1 px-3 py-2 rounded-lg bg-white border border-blue-200 focus:border-[#0866ed] outline-none text-center font-bold tracking-widest text-[15px]"
                         />
-                        <span className="capitalize">{fac}</span>
-                      </label>
-                    ))}
-                  </div>
-
-                  <label className="flex items-start gap-2 text-[12px] text-slate-600 cursor-pointer pt-1">
-                    <input 
-                      type="checkbox"
-                      checked={commercialAgreeTerms}
-                      onChange={(e) => setCommercialAgreeTerms(e.target.checked)}
-                      className="w-4 h-4 text-[#0866e8] rounded mt-0.5"
-                    />
-                    <span>I confirm standard hospitality work policies (weekly off & verified salary payout).</span>
-                  </label>
-                </>
-              ) : activeTab === 'homecook' ? (
-                /* TAB 2: Home Cook Requirement */
-                <div className="space-y-3.5">
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Home Cook Requirements</h2>
-                    <p className="text-[12.5px] text-slate-500">Choose the type of cook and preferences for your household.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {cookLevels.map(lvl => (
-                      <div
-                        key={lvl.id}
-                        onClick={() => setHomeCookLevel(lvl.id)}
-                        className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                          homeCookLevel === lvl.id
-                            ? 'border-[#0866e8] bg-blue-50/40 shadow-sm'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-bold text-[13px] text-slate-900">{lvl.name}</span>
-                          <span className="text-[10px] font-extrabold bg-[#0866e8]/10 text-[#0866e8] px-1.5 py-0.5 rounded">{lvl.badge}</span>
-                        </div>
-                        <p className="text-[11.5px] text-slate-500 line-clamp-2">{lvl.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Food Preference</label>
-                      <select 
-                        value={homeFoodPref}
-                        onChange={(e) => setHomeFoodPref(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        {foodPreferences.map(f => <option key={f} value={f}>{f}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Service Timing</label>
-                      <select 
-                        value={homeDuration}
-                        onChange={(e) => setHomeDuration(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        {serviceDurations.map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Family Members</label>
-                      <select 
-                        value={homeFamilyMembers}
-                        onChange={(e) => setHomeFamilyMembers(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        {familyMemberOptions.map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Start Date</label>
-                      <input 
-                        type="date"
-                        value={homeStartDate}
-                        onChange={(e) => setHomeStartDate(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-2 text-[12px] text-slate-600 cursor-pointer pt-1">
-                    <input 
-                      type="checkbox"
-                      checked={homeAgreeTerms}
-                      onChange={(e) => setHomeAgreeTerms(e.target.checked)}
-                      className="w-4 h-4 text-[#0866e8] rounded mt-0.5"
-                    />
-                    <span>I agree to ₹299 verification & matching fee with free candidate replacement support.</span>
-                  </label>
-                </div>
-              ) : (
-                /* TAB 3: Daily Basis Requirement */
-                <div className="space-y-3.5">
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Daily Staff Requirement</h2>
-                    <p className="text-[12.5px] text-slate-500">Configure daily staff roles, hours and number of people.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Staff Role</label>
-                      <select 
-                        value={dailyStaffRequirement.role}
-                        onChange={(e) => {
-                          const selected = dailyRoles.find(r => r.role === e.target.value);
-                          setDailyStaffRequirement(prev => ({
-                            ...prev,
-                            role: e.target.value,
-                            ratePerDay: selected ? selected.rate : 999
-                          }));
-                        }}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      >
-                        {dailyRoles.map(r => <option key={r.role} value={r.role}>{r.role} (₹{r.rate}/day)</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Staff</label>
-                      <input 
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={dailyStaffRequirement.count}
-                        onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, count: Math.max(1, parseInt(e.target.value) || 1) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Days</label>
-                      <input 
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={dailyStaffRequirement.days}
-                        onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, days: Math.max(1, parseInt(e.target.value) || 1) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Event Date</label>
-                      <input 
-                        type="date"
-                        value={dailyStaffRequirement.startDate}
-                        onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">Start Time</label>
-                      <input 
-                        type="time"
-                        value={dailyStaffRequirement.startTime}
-                        onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, startTime: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[12px] font-bold text-slate-700 mb-1">End Time</label>
-                      <input 
-                        type="time"
-                        value={dailyStaffRequirement.endTime}
-                        onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, endTime: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-2 text-[12px] text-slate-600 cursor-pointer pt-1">
-                    <input 
-                      type="checkbox"
-                      checked={dailyAgreeTerms}
-                      onChange={(e) => setDailyAgreeTerms(e.target.checked)}
-                      className="w-4 h-4 text-[#0866e8] rounded mt-0.5"
-                    />
-                    <span>I understand that 25% advance confirms the booking and balance is payable upon staff arrival.</span>
-                  </label>
-                </div>
-              )}
-
-              {/* Back & Next Navigation */}
-              <div className="pt-3 flex items-center justify-between border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handleProceedToStep3}
-                  className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
-                >
-                  <span>Continue →</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ================= STEP 3: Menu Details (For Party) OR Booking Summary (For others) ================= */}
-          {step === 3 && !bookingSuccess && (
-            <div className="space-y-4 animate-in fade-in">
-              {isPartyTab ? (
-                /* TAB 4 (Party Chef) -> Step 3: Menu Details */
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Menu Details</h2>
-                    <p className="text-[12.5px] text-slate-500">Select your preferred cuisine and menu.</p>
-                  </div>
-
-                  {/* Choose Cuisine */}
-                  <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-2">
-                      Choose Cuisine <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {partyCuisinesList.map(c => {
-                        const isSelected = partySelectedCuisine === c;
-                        return (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setPartySelectedCuisine(c)}
-                            className={`py-2 px-3 rounded-xl border font-bold text-[12.5px] transition-all text-center ${
-                              isSelected
-                                ? 'border-[#0866e8] bg-blue-50/80 text-[#0866e8]'
-                                : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
-                            }`}
-                          >
-                            {c}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Choose Menu Later Checkbox Banner */}
-                  <div 
-                    onClick={() => setPartyChooseLater(!partyChooseLater)}
-                    className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
-                      partyChooseLater ? 'border-[#0866e8] bg-blue-50/50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <input 
-                        type="checkbox" 
-                        checked={partyChooseLater}
-                        onChange={() => {}} 
-                        className="w-4 h-4 text-[#0866e8] rounded mt-0.5 pointer-events-none"
-                      />
-                      <div>
-                        <strong className="text-[13px] text-slate-900 block">I'll choose menu later</strong>
-                        <p className="text-[11.5px] text-slate-500 mt-0.5 leading-relaxed">
-                          You don't need to finalize your menu right now. After booking, you will get an option to choose or upload your own menu from your Booking Dashboard.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* If NOT Choose Later -> Show Meal Options */}
-                  {!partyChooseLater && (
-                    <div className="space-y-3.5 pt-1">
-                      {/* Breakfast Items */}
-                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
-                        <span className="text-[12.5px] font-bold text-[#0866e8] block">Date 1 — Breakfast</span>
-                        <p className="text-[11px] text-slate-500">Select the menu items for this meal.</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                          {breakfastMenuOptions.map(item => {
-                            const isSelected = partyBreakfastItems.includes(item);
-                            return (
-                              <button
-                                key={item}
-                                type="button"
-                                onClick={() => handleToggleMenuItem('breakfast', item)}
-                                className={`py-1.5 px-2.5 rounded-lg border text-[11.5px] font-semibold text-center transition-all ${
-                                  isSelected ? 'border-[#0866e8] bg-[#0866e8] text-white shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                                }`}
-                              >
-                                {item}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Lunch Items */}
-                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
-                        <span className="text-[12.5px] font-bold text-[#0866e8] block">Date 1 — Lunch</span>
-                        <p className="text-[11px] text-slate-500">Select the menu items for this meal.</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                          {lunchMenuOptions.map(item => {
-                            const isSelected = partyLunchItems.includes(item);
-                            return (
-                              <button
-                                key={item}
-                                type="button"
-                                onClick={() => handleToggleMenuItem('lunch', item)}
-                                className={`py-1.5 px-2.5 rounded-lg border text-[11.5px] font-semibold text-center transition-all ${
-                                  isSelected ? 'border-[#0866e8] bg-[#0866e8] text-white shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                                }`}
-                              >
-                                {item}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Dinner Items */}
-                      <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
-                        <span className="text-[12.5px] font-bold text-[#0866e8] block">Date 1 — Dinner</span>
-                        <p className="text-[11px] text-slate-500">Select the menu items for this meal.</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                          {dinnerMenuOptions.map(item => {
-                            const isSelected = partyDinnerItems.includes(item);
-                            return (
-                              <button
-                                key={item}
-                                type="button"
-                                onClick={() => handleToggleMenuItem('dinner', item)}
-                                className={`py-1.5 px-2.5 rounded-lg border text-[11.5px] font-semibold text-center transition-all ${
-                                  isSelected ? 'border-[#0866e8] bg-[#0866e8] text-white shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                                }`}
-                              >
-                                {item}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          disabled={isVerifyingOtp || otpValue.length < 4}
+                          className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-bold text-[12.5px] rounded-lg transition-colors flex items-center gap-1.5"
+                        >
+                          {isVerifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                        </button>
                       </div>
                     </div>
                   )}
 
-                  {/* No. of Guests */}
+                  {/* Email */}
                   <div>
-                    <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
-                      No. of Guests <span className="text-red-500">*</span>
+                    <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                      Email Address
                     </label>
                     <input 
-                      type="number"
-                      min={1}
-                      max={1000}
-                      value={partyGuestCount}
-                      onChange={(e) => setPartyGuestCount(e.target.value)}
-                      placeholder="Enter number of guests"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-bold text-slate-800 outline-none focus:border-[#0866e8]"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter email address"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Your final menu can be selected or uploaded after booking from your Booking Dashboard.
-                    </p>
                   </div>
 
-                  {/* Back & Next Navigation */}
-                  <div className="pt-3 flex items-center justify-between border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setStep(2)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleProceedToStep4}
-                      className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
-                    >
-                      <span>Continue →</span>
-                    </button>
+                  {/* City */}
+                  <div>
+                    <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Enter city"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
+                    />
+                  </div>
+
+                  {/* Commercial Business Name */}
+                  {activeTab === 'commercial' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                        Business Name <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        value={commercialBusinessName}
+                        onChange={(e) => setCommercialBusinessName(e.target.value)}
+                        placeholder="Restaurant / Hotel / Cafe / Cloud Kitchen"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
+                      />
+                    </div>
+                  )}
+
+                  {/* Daily Outlet Name */}
+                  {activeTab === 'daily' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                        Outlet / Event Name <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        value={dailyOutletName}
+                        onChange={(e) => setDailyOutletName(e.target.value)}
+                        placeholder="e.g. Royal Grand Hotel, Banquet Hall, Cafe, Private Event"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
+                      />
+                    </div>
+                  )}
+
+                  {/* Event Address */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                      Event Address <span className="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                      rows={2}
+                      value={activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : activeTab === 'daily' ? dailyAddress : partyVenueAddress}
+                      onChange={(e) => {
+                        if (activeTab === 'commercial') setCommercialAddress(e.target.value);
+                        else if (activeTab === 'homecook') setHomeAddress(e.target.value);
+                        else if (activeTab === 'daily') setDailyAddress(e.target.value);
+                        else setPartyVenueAddress(e.target.value);
+                      }}
+                      placeholder="Enter complete event address"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
+                    />
                   </div>
                 </div>
-              ) : (
-                /* Non-Party Step 3: Booking Summary */
-                <>
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
-                    <p className="text-[12.5px] text-slate-500">Review your requirement and amount before payment.</p>
-                  </div>
 
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[12.5px] space-y-1">
-                    <div className="font-bold text-slate-900 mb-1">Customer & Location Details</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
-                      <div><strong className="text-slate-800">Name:</strong> {name}</div>
-                      <div><strong className="text-slate-800">Mobile:</strong> +91 {phone}</div>
-                      {activeTab === 'commercial' && <div><strong className="text-slate-800">Business:</strong> {commercialBusinessName}</div>}
-                      {activeTab === 'daily' && <div><strong className="text-slate-800">Outlet/Event:</strong> {dailyOutletName}</div>}
-                      <div className="sm:col-span-2">
-                        <strong className="text-slate-800">Address:</strong>{' '}
-                        {activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : dailyAddress}
-                      </div>
+                {/* Next Button */}
+                <div className="pt-3 flex justify-end border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleProceedToStep2}
+                    className="inline-flex items-center gap-2 bg-[#0866ed] hover:bg-[#0652ba] text-white px-8 py-2.5 rounded-xl font-bold text-[14px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                  >
+                    <span>Continue →</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ================= STEP 2: Event Details ================= */}
+            {step === 2 && !bookingSuccess && (
+              <div className="space-y-4 animate-in fade-in">
+                {isPartyTab ? (
+                  /* TAB 4: Chef for Party -> Step 2: Event Details */
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="text-[20px] font-extrabold text-[#132b5c] tracking-tight">Event Details</h2>
+                      <p className="text-[13px] text-slate-500">
+                        First select all event dates. Then choose meals and guest count separately for every date.
+                      </p>
                     </div>
-                  </div>
 
-                  <div className="p-3.5 bg-white rounded-xl border border-slate-200 text-[12.5px]">
-                    <div className="font-bold text-slate-900 mb-2">Requirement Summary</div>
-
-                    {activeTab === 'commercial' && (
-                      <div className="space-y-1.5">
-                        {commercialStaffList.map((s, i) => (
-                          <div key={i} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-none">
-                            <span className="font-semibold text-slate-800">{s.staffCategory} ({s.serviceCategory})</span>
-                            <span className="font-bold text-slate-900">Qty: {s.noOfStaff} • {s.salaryRange}</span>
-                          </div>
-                        ))}
+                    {/* Date Selector Box */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-[#f8fbff] border border-[#dbe7f8] space-y-3">
+                      <div>
+                        <div className="font-extrabold text-[16px] text-slate-900">Select Event Dates</div>
+                        <div className="text-[12.5px] text-slate-500">
+                          Select one or multiple dates. You can add another date later as well.
+                        </div>
                       </div>
-                    )}
 
-                    {activeTab === 'homecook' && (
-                      <div className="grid grid-cols-2 gap-2 text-slate-600">
-                        <div><strong className="text-slate-800">Cook Level:</strong> {cookLevels.find(c => c.id === homeCookLevel)?.name}</div>
-                        <div><strong className="text-slate-800">Preference:</strong> {homeFoodPref}</div>
-                        <div><strong className="text-slate-800">Timing:</strong> {homeDuration}</div>
-                        <div><strong className="text-slate-800">Start Date:</strong> {homeStartDate}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2.5">
+                        <input 
+                          type="date"
+                          value={partyNewDateInput}
+                          onChange={(e) => setPartyNewDateInput(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce3ed] bg-white text-[13.5px] font-medium outline-none focus:border-[#0866ed]"
+                        />
+                        <button
+                          type="button"
+                          onClick={addPartyDate}
+                          className="px-6 py-2.5 bg-[#0866ed] hover:bg-[#0652ba] text-white font-bold text-[13.5px] rounded-xl shadow-sm transition-colors whitespace-nowrap"
+                        >
+                          + Add Date
+                        </button>
                       </div>
-                    )}
 
-                    {activeTab === 'daily' && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-[12px]">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-slate-500 font-bold">
-                              <th className="pb-1">Role</th>
-                              <th className="pb-1">Rate/Day</th>
-                              <th className="pb-1">Count</th>
-                              <th className="pb-1">Days</th>
-                              <th className="pb-1 text-right">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="py-1 font-bold text-slate-800">{dailyStaffRequirement.role}</td>
-                              <td className="py-1">₹{dailyStaffRequirement.ratePerDay}</td>
-                              <td className="py-1">{dailyStaffRequirement.count}</td>
-                              <td className="py-1">{dailyStaffRequirement.days}</td>
-                              <td className="py-1 text-right font-bold text-slate-900">₹{dailyStaffAmount}</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                      {/* Selected Date Chips */}
+                      {partyDates.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {partyDates.map((event, idx) => (
+                            <div 
+                              key={idx}
+                              className="inline-flex items-center gap-2 bg-white border border-[#cfe0fb] text-[#17468e] px-3 py-1.5 rounded-full text-[12.5px] font-bold shadow-xs"
+                            >
+                              <span>📅 {formatDate(event.date)}</span>
+                              <button
+                                type="button"
+                                onClick={() => removePartyDate(idx)}
+                                className="w-5 h-5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xs font-bold transition-colors"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Event Cards List */}
+                    {partyDates.length === 0 ? (
+                      <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 space-y-2">
+                        <div className="text-[36px]">📅</div>
+                        <h3 className="font-bold text-slate-700 text-[15px]">Select an event date above</h3>
+                        <p className="text-[12.5px] text-slate-500">Your date-wise meal options will appear here.</p>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-[13px] space-y-1.5">
-                    {activeTab === 'daily' ? (
-                      <>
-                        <div className="flex justify-between text-slate-600">
-                          <span>Staff Charges</span>
-                          <span>₹{dailyStaffAmount}</span>
-                        </div>
-                        <div className="flex justify-between text-slate-600">
-                          <span>GST (18%)</span>
-                          <span>₹{dailyGst}</span>
-                        </div>
-                        <div className="flex justify-between text-slate-600">
-                          <span>Platform Fee (10%)</span>
-                          <span>₹{dailyPlatformFee}</span>
-                        </div>
-                        <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-blue-200">
-                          <span>Total Amount</span>
-                          <span>₹{dailyTotalAmount}</span>
-                        </div>
-                        <div className="flex justify-between font-extrabold text-[#0866e8] text-[15px] pt-0.5">
-                          <span>25% Advance Payable</span>
-                          <span>₹{dailyAdvanceAmount}</span>
-                        </div>
-                      </>
                     ) : (
-                      <>
-                        <div className="flex justify-between text-slate-600">
-                          <span>Staff Requirement Verification & Matching Fee</span>
-                          <span>₹299</span>
-                        </div>
-                        <div className="flex justify-between font-extrabold text-[#0866e8] text-[15px] pt-1 border-t border-blue-200">
-                          <span>Payable Now</span>
-                          <span>₹299</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="pt-3 flex items-center justify-between border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setStep(2)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStep(4)}
-                      className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
-                    >
-                      <span>Proceed to Payment →</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ================= STEP 4: Booking Summary (For Party) OR Payment (For others) ================= */}
-          {step === 4 && !bookingSuccess && (
-            <div className="space-y-4 animate-in fade-in">
-              {isPartyTab ? (
-                /* TAB 4: Chef for Party -> Step 4: Booking Summary (Matching Screenshot 4) */
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
-                    <p className="text-[12.5px] text-slate-500">Review your event details before payment.</p>
-                  </div>
-
-                  {/* Customer summary box */}
-                  <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 text-[12.5px] space-y-1.5">
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500 font-medium">Customer</span>
-                      <strong className="text-slate-900">{name}</strong>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500 font-medium">Mobile</span>
-                      <strong className="text-slate-900">{phone}</strong>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500 font-medium">Occasion</span>
-                      <strong className="text-slate-900">{partyOccasionType}</strong>
-                    </div>
-                  </div>
-
-                  {/* Meal Cards breakdown */}
-                  <div className="space-y-2.5 max-h-[36vh] overflow-y-auto pr-1">
-                    {partyDatesList.map((dItem) => (
-                      <React.Fragment key={dItem.id}>
-                        {dItem.meals.map(meal => (
-                          <div key={meal} className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
-                            <span className="font-bold text-[12.5px] text-[#0866e8] block">
-                              {dItem.date || 'Selected Date'} — {meal}
-                            </span>
-                            <div className="flex justify-between text-[12px]">
-                              <span className="text-slate-500">Cuisine</span>
-                              <strong className="text-slate-800">{partySelectedCuisine}</strong>
-                            </div>
-                            <div className="flex justify-between text-[12px]">
-                              <span className="text-slate-500">Guests</span>
-                              <strong className="text-slate-800">{partyGuestCount}</strong>
-                            </div>
-                            <div className="text-[12px] pt-1 border-t border-slate-100">
-                              <span className="text-slate-500 block mb-1">Selected Menu</span>
-                              {partyChooseLater ? (
-                                <span className="text-slate-600 font-medium italic">To be chosen later from Booking Dashboard</span>
-                              ) : (
-                                <div className="space-y-0.5 pl-2 font-medium text-slate-800">
-                                  {(meal === 'Breakfast' ? partyBreakfastItems : meal === 'Lunch' ? partyLunchItems : partyDinnerItems).map(item => (
-                                    <div key={item}>• {item}</div>
-                                  ))}
+                      <div className="space-y-4">
+                        {partyDates.map((event, dateIdx) => (
+                          <div key={dateIdx} className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-4">
+                            {/* Card Header */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-[#eaf2ff] text-[#0866ed] flex items-center justify-center font-extrabold text-[15px]">
+                                  {dateIdx + 1}
                                 </div>
+                                <div>
+                                  <span className="font-extrabold text-[16px] text-slate-900 block">Day {dateIdx + 1}</span>
+                                  <span className="text-[12px] font-medium text-slate-500">{formatDate(event.date)}</span>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => removePartyDate(dateIdx)}
+                                className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[12px] transition-colors"
+                              >
+                                Remove Date
+                              </button>
+                            </div>
+
+                            {/* Event Type Select */}
+                            <div>
+                              <label className="block text-[12.5px] font-bold text-slate-700 mb-1">
+                                Type of Event <span className="text-red-500">*</span>
+                              </label>
+                              <select 
+                                value={event.eventType}
+                                onChange={(e) => updatePartyEventType(dateIdx, e.target.value)}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                              >
+                                {occasionTypes.map(opt => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Meals List */}
+                            <div className="space-y-3">
+                              {event.meals.length === 0 ? (
+                                <div className="p-4 bg-slate-50 rounded-xl space-y-2 text-center">
+                                  <span className="font-bold text-[13px] text-slate-700 block">Select Meal</span>
+                                  <div className="flex flex-wrap justify-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => addSpecificMeal(dateIdx, 'Breakfast')}
+                                      className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold text-[12.5px]"
+                                    >
+                                      ☀️ Breakfast
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => addSpecificMeal(dateIdx, 'Lunch')}
+                                      className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl font-bold text-[12.5px]"
+                                    >
+                                      🍱 Lunch
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => addSpecificMeal(dateIdx, 'Dinner')}
+                                      className="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl font-bold text-[12.5px]"
+                                    >
+                                      🌙 Dinner
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                event.meals.map((meal, mealIdx) => {
+                                  let icon = '☀️';
+                                  let iconBg = 'bg-[#fff4d6] text-amber-800';
+                                  if (meal.name === 'Lunch') {
+                                    icon = '🍱';
+                                    iconBg = 'bg-[#e7f8ed] text-emerald-800';
+                                  } else if (meal.name === 'Dinner') {
+                                    icon = '🌙';
+                                    iconBg = 'bg-[#eee9ff] text-purple-800';
+                                  }
+
+                                  return (
+                                    <div key={mealIdx} className="p-3.5 rounded-xl border border-slate-200 bg-[#fbfdff] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[19px] ${iconBg}`}>
+                                          {icon}
+                                        </div>
+                                        <div>
+                                          <div className="font-extrabold text-[14.5px] text-slate-900">{meal.name}</div>
+                                          <div className="text-[11.5px] text-slate-500">Configure guest count</div>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[12.5px] font-semibold text-slate-500">Guests</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => changePartyGuests(dateIdx, mealIdx, -1)}
+                                            className="w-8 h-8 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-bold text-[16px] flex items-center justify-center"
+                                          >
+                                            −
+                                          </button>
+                                          <span className="min-w-[32px] text-center font-extrabold text-[14px]">
+                                            {meal.guests}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => changePartyGuests(dateIdx, mealIdx, 1)}
+                                            className="w-8 h-8 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-bold text-[16px] flex items-center justify-center"
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+
+                                        {event.meals.length > 1 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removePartyMeal(dateIdx, mealIdx)}
+                                            className="text-slate-400 hover:text-red-500 p-1"
+                                            title="Remove Meal"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })
                               )}
                             </div>
+
+                            {/* Add Another Meal Button */}
+                            <button
+                              type="button"
+                              onClick={() => addNextAvailableMeal(dateIdx)}
+                              className="w-full py-2.5 rounded-xl border border-dashed border-[#72a8ff] bg-[#f7fbff] hover:bg-blue-50 text-[#0866ed] font-bold text-[13px] transition-colors"
+                            >
+                              ＋ Add Another Meal
+                            </button>
                           </div>
                         ))}
-                      </React.Fragment>
-                    ))}
-                  </div>
+                      </div>
+                    )}
 
-                  {/* Back & Next Navigation */}
-                  <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                    {/* Add More Date Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.querySelector('input[type="date"]') as HTMLInputElement;
+                        if (input) input.focus();
+                      }}
+                      className="w-full py-3 rounded-xl border-2 border-dashed border-[#72a8ff] bg-[#f9fcff] hover:bg-blue-50 text-[#0866ed] font-extrabold text-[14px] transition-colors"
+                    >
+                      ＋ Add More Date
+                    </button>
+
+                    {/* Back & Next Navigation */}
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleProceedToStep3}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Continue →</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : activeTab === 'commercial' ? (
+                  /* TAB 1: Commercial Requirement */
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Staff Requirement</h2>
+                        <p className="text-[12.5px] text-slate-500">Select required positions for your hotel/restaurant.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCommercialStaffList(prev => [...prev, { id: Date.now().toString(), serviceCategory: 'Kitchen Staff', staffCategory: 'Sous Chef', salaryRange: '₹20,000 - ₹25,000', noOfStaff: 1 }])}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0866e8] hover:bg-blue-100 font-bold text-[12px] rounded-lg border border-blue-200 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Staff
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
+                      {commercialStaffList.map((item) => (
+                        <div key={item.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                          <div className="sm:col-span-3">
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">Service Category</label>
+                            <select 
+                              value={item.serviceCategory}
+                              onChange={(e) => {
+                                const newCat = e.target.value;
+                                const defaultRole = commercialStaffCategoriesMap[newCat]?.[0] || 'Head Chef';
+                                setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, serviceCategory: newCat, staffCategory: defaultRole } : s));
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-medium text-slate-800 outline-none"
+                            >
+                              {commercialServiceCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-3">
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">Staff Role</label>
+                            <select 
+                              value={item.staffCategory}
+                              onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, staffCategory: e.target.value } : s))}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-medium text-slate-800 outline-none"
+                            >
+                              {(commercialStaffCategoriesMap[item.serviceCategory] || []).map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-3">
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">Salary Range</label>
+                            <select 
+                              value={item.salaryRange}
+                              onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, salaryRange: e.target.value } : s))}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-medium text-slate-800 outline-none"
+                            >
+                              {salaryRanges.map(sal => <option key={sal} value={sal}>{sal}</option>)}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">No. of Staff</label>
+                            <input 
+                              type="number"
+                              min={1}
+                              max={50}
+                              value={item.noOfStaff}
+                              onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, noOfStaff: Math.max(1, parseInt(e.target.value) || 1) } : s))}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-bold text-slate-800 outline-none text-center"
+                            />
+                          </div>
+                          <div className="sm:col-span-1 flex justify-center">
+                            <button
+                              type="button"
+                              disabled={commercialStaffList.length === 1}
+                              onClick={() => setCommercialStaffList(prev => prev.filter(s => s.id !== item.id))}
+                              className="p-2 text-slate-400 hover:text-red-500 disabled:opacity-30"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleProceedToStep3}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Continue →</span>
+                      </button>
+                    </div>
+                  </>
+                ) : activeTab === 'homecook' ? (
+                  /* TAB 2: Home Cook Requirement */
+                  <div className="space-y-3.5">
+                    <div>
+                      <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Home Cook Requirements</h2>
+                      <p className="text-[12.5px] text-slate-500">Choose the type of cook and preferences for your household.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {cookLevels.map(lvl => (
+                        <div
+                          key={lvl.id}
+                          onClick={() => setHomeCookLevel(lvl.id)}
+                          className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                            homeCookLevel === lvl.id
+                              ? 'border-[#0866ed] bg-blue-50/40 shadow-sm'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-bold text-[13px] text-slate-900">{lvl.name}</span>
+                            <span className="text-[10px] font-extrabold bg-[#0866ed]/10 text-[#0866ed] px-1.5 py-0.5 rounded">{lvl.badge}</span>
+                          </div>
+                          <p className="text-[11.5px] text-slate-500 line-clamp-2">{lvl.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Food Preference</label>
+                        <select 
+                          value={homeFoodPref}
+                          onChange={(e) => setHomeFoodPref(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
+                        >
+                          {foodPreferences.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Service Timing</label>
+                        <select 
+                          value={homeDuration}
+                          onChange={(e) => setHomeDuration(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
+                        >
+                          {serviceDurations.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Family Members</label>
+                        <select 
+                          value={homeFamilyMembers}
+                          onChange={(e) => setHomeFamilyMembers(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
+                        >
+                          {familyMemberOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Start Date</label>
+                        <input 
+                          type="date"
+                          value={homeStartDate}
+                          onChange={(e) => setHomeStartDate(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleProceedToStep3}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Continue →</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* TAB 3: Daily Basis Requirement */
+                  <div className="space-y-3.5">
+                    <div>
+                      <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Daily Staff Requirement</h2>
+                      <p className="text-[12.5px] text-slate-500">Configure daily staff roles, hours and number of people.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Staff Role</label>
+                        <select 
+                          value={dailyStaffRequirement.role}
+                          onChange={(e) => {
+                            const selected = dailyRoles.find(r => r.role === e.target.value);
+                            setDailyStaffRequirement(prev => ({
+                              ...prev,
+                              role: e.target.value,
+                              ratePerDay: selected ? selected.rate : 999
+                            }));
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
+                        >
+                          {dailyRoles.map(r => <option key={r.role} value={r.role}>{r.role} (₹{r.rate}/day)</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Staff</label>
+                        <input 
+                          type="number"
+                          min={1}
+                          max={30}
+                          value={dailyStaffRequirement.count}
+                          onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, count: Math.max(1, parseInt(e.target.value) || 1) }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Days</label>
+                        <input 
+                          type="number"
+                          min={1}
+                          max={30}
+                          value={dailyStaffRequirement.days}
+                          onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, days: Math.max(1, parseInt(e.target.value) || 1) }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleProceedToStep3}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Continue →</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ================= STEP 3: Menu Details (For Party) OR Booking Summary (Others) ================= */}
+            {step === 3 && !bookingSuccess && (
+              <div className="space-y-4 animate-in fade-in">
+                {isPartyTab ? (
+                  /* TAB 4: Chef for Party -> Step 3: Menu Details */
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="text-[20px] font-extrabold text-[#132b5c] tracking-tight">Menu Details</h2>
+                      <p className="text-[13px] text-slate-500">
+                        For each meal, choose whether you want to select dishes now or decide the dishes later.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {partyDates.map((event, dateIdx) => (
+                        <div key={dateIdx} className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-4">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-[#eaf2ff] text-[#0866ed] flex items-center justify-center font-extrabold text-[14px]">
+                                {dateIdx + 1}
+                              </div>
+                              <div>
+                                <span className="font-extrabold text-[15.5px] text-slate-900">Day {dateIdx + 1}</span>
+                                <span className="text-[12px] text-slate-500 ml-2">{formatDate(event.date)}</span>
+                              </div>
+                            </div>
+                            <span className="px-3 py-1 bg-blue-50 text-[#0866ed] font-bold text-[12px] rounded-lg border border-blue-100">
+                              {event.eventType}
+                            </span>
+                          </div>
+
+                          {/* Meals for this Day */}
+                          <div className="space-y-3.5">
+                            {event.meals.map((meal, mealIdx) => (
+                              <div key={mealIdx} className="p-4 rounded-xl border border-slate-200 bg-[#fbfdff] space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <span className="font-extrabold text-[15px] text-slate-900">{meal.name}</span>
+                                    <span className="text-[12px] text-slate-500 ml-2 font-semibold">({meal.guests} Guests)</span>
+                                  </div>
+
+                                  {meal.menuMode && (
+                                    <button
+                                      type="button"
+                                      onClick={() => resetMenuMode(dateIdx, mealIdx)}
+                                      className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-[11.5px]"
+                                    >
+                                      Change Option
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* No Mode Selected */}
+                                {!meal.menuMode && (
+                                  <div className="space-y-2 pt-1">
+                                    <div className="text-[13px] font-bold text-slate-700">How would you like to choose the menu?</div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div 
+                                        onClick={() => selectMenuMode(dateIdx, mealIdx, 'now')}
+                                        className="p-3.5 rounded-xl border-2 border-[#dce4ef] hover:border-[#8bb7ff] bg-white cursor-pointer transition-all hover:bg-blue-50/20"
+                                      >
+                                        <div className="font-bold text-[14px] text-slate-900">Choose Menu Now</div>
+                                        <div className="text-[11.5px] text-slate-500 mt-1">Select individual dishes from our menu.</div>
+                                      </div>
+
+                                      <div 
+                                        onClick={() => selectMenuMode(dateIdx, mealIdx, 'later')}
+                                        className="p-3.5 rounded-xl border-2 border-[#dce4ef] hover:border-[#8bb7ff] bg-white cursor-pointer transition-all hover:bg-blue-50/20"
+                                      >
+                                        <div className="font-bold text-[14px] text-slate-900">I'll Choose Later</div>
+                                        <div className="text-[11.5px] text-slate-500 mt-1">Tell us how many items you need in each category.</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Mode: Choose Now */}
+                                {meal.menuMode === 'now' && (
+                                  <div className="space-y-3 pt-1">
+                                    <div className="p-3 rounded-xl border-2 border-[#0866ed] bg-[#f3f8ff]">
+                                      <div className="font-bold text-[13.5px] text-[#0866ed]">✓ Choose Menu Now</div>
+                                      <div className="text-[11.5px] text-slate-600 mt-0.5">Select dishes below.</div>
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => openMenuModal(dateIdx, mealIdx)}
+                                      className="py-2.5 px-4 rounded-xl border border-dashed border-[#72a8ff] bg-[#f7fbff] hover:bg-blue-50 text-[#0866ed] font-bold text-[13px] transition-colors"
+                                    >
+                                      ＋ Select Menu Items
+                                    </button>
+
+                                    {meal.menu.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 pt-1">
+                                        {meal.menu.map(item => {
+                                          const food = menuCatalog.find(x => x.name === item);
+                                          return (
+                                            <div key={item} className="flex items-center gap-2 p-1.5 pr-2.5 border border-[#dce4ef] bg-white rounded-xl shadow-xs">
+                                              {food && (
+                                                <img src={food.image} alt={item} className="w-8 h-8 rounded-lg object-cover" />
+                                              )}
+                                              <span className="text-[12.5px] font-bold text-slate-800">{item}</span>
+                                              <button
+                                                type="button"
+                                                onClick={() => removeSingleMenuItem(dateIdx, mealIdx, item)}
+                                                className="w-5 h-5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xs font-bold transition-colors ml-1"
+                                              >
+                                                ×
+                                              </button>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Mode: Choose Later */}
+                                {meal.menuMode === 'later' && (
+                                  <div className="space-y-3 pt-1">
+                                    <div className="p-3 rounded-xl border-2 border-[#0866ed] bg-[#f3f8ff]">
+                                      <div className="font-bold text-[13.5px] text-[#0866ed]">✓ I'll Choose Later</div>
+                                      <div className="text-[11.5px] text-slate-600 mt-0.5">Enter the number of dishes required in each category.</div>
+                                    </div>
+
+                                    <div className="p-4 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] space-y-3">
+                                      <div>
+                                        <div className="font-bold text-[13.5px] text-slate-900">Number of Menu Items</div>
+                                        <div className="text-[11.5px] text-slate-500">The amount will be calculated according to the number of items.</div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                        {[
+                                          { key: 'starter' as const, label: 'Starters (₹250)' },
+                                          { key: 'mainCourse' as const, label: 'Main Course (₹250)' },
+                                          { key: 'breads' as const, label: 'Breads (₹150)' },
+                                          { key: 'rice' as const, label: 'Rice (₹200)' },
+                                          { key: 'drinks' as const, label: 'Drinks (₹100)' },
+                                          { key: 'sides' as const, label: 'Sides (₹100)' }
+                                        ].map(cat => (
+                                          <div key={cat.key} className="p-2.5 bg-white border border-[#dce4ef] rounded-xl flex items-center justify-between">
+                                            <span className="text-[12px] font-bold text-slate-700">{cat.label}</span>
+                                            <div className="flex items-center gap-1.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => changePartyCategoryCount(dateIdx, mealIdx, cat.key, -1)}
+                                                className="w-7 h-7 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-extrabold text-[14px] flex items-center justify-center"
+                                              >
+                                                −
+                                              </button>
+                                              <span className="min-w-[20px] text-center font-extrabold text-[13px]">
+                                                {meal.categories[cat.key] || 0}
+                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => changePartyCategoryCount(dateIdx, mealIdx, cat.key, 1)}
+                                                className="w-7 h-7 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-extrabold text-[14px] flex items-center justify-center"
+                                              >
+                                                +
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Back & Next Navigation */}
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleProceedToStep4}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Continue →</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Non-Party Step 3: Booking Summary */
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
+                      <p className="text-[12.5px] text-slate-500">Review your requirement and amount before payment.</p>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[12.5px] space-y-1">
+                      <div className="font-bold text-slate-900 mb-1">Customer Details</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
+                        <div><strong className="text-slate-800">Name:</strong> {name}</div>
+                        <div><strong className="text-slate-800">Mobile:</strong> +91 {phone}</div>
+                        {activeTab === 'commercial' && <div><strong className="text-slate-800">Business:</strong> {commercialBusinessName}</div>}
+                        {activeTab === 'daily' && <div><strong className="text-slate-800">Outlet/Event:</strong> {dailyOutletName}</div>}
+                        <div className="sm:col-span-2">
+                          <strong className="text-slate-800">Address:</strong>{' '}
+                          {activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : dailyAddress}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStep(4)}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Proceed to Payment →</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ================= STEP 4: Booking Summary (For Party) OR Payment (Others) ================= */}
+            {step === 4 && !bookingSuccess && (
+              <div className="space-y-4 animate-in fade-in">
+                {isPartyTab ? (
+                  /* TAB 4: Chef for Party -> Step 4: Booking Summary */
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="text-[20px] font-extrabold text-[#132b5c] tracking-tight">Booking Summary</h2>
+                      <p className="text-[13px] text-slate-500">
+                        Review all dates, meals, guests, menu selections and charges.
+                      </p>
+                    </div>
+
+                    {/* Date-wise Summary Breakdown */}
+                    <div className="space-y-4 max-h-[36vh] overflow-y-auto pr-1">
+                      {partyDates.map((event, dateIdx) => {
+                        let dateMealSum = 0;
+                        return (
+                          <div key={dateIdx} className="rounded-2xl border border-[#dce4ef] overflow-hidden bg-white shadow-xs">
+                            <div className="bg-[#f2f6fc] px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between">
+                              <span className="font-extrabold text-[14px] text-slate-900">
+                                Day {dateIdx + 1} — {formatDate(event.date)}
+                              </span>
+                              <span className="text-[12px] font-bold text-[#0866ed] bg-white px-2.5 py-0.5 rounded-full border border-blue-100">
+                                {event.eventType}
+                              </span>
+                            </div>
+
+                            <div className="divide-y divide-[#edf0f5]">
+                              {event.meals.map((meal, mealIdx) => {
+                                let mealMenuPrice = 0;
+                                let desc = '';
+                                if (meal.menuMode === 'now') {
+                                  mealMenuPrice = meal.menu.length * CATEGORY_RATES.mainCourse;
+                                  desc = `${meal.menu.length} selected dishes (${meal.menu.join(', ')})`;
+                                } else if (meal.menuMode === 'later') {
+                                  const c = meal.categories;
+                                  mealMenuPrice = (c.starter || 0) * CATEGORY_RATES.starter
+                                    + (c.mainCourse || 0) * CATEGORY_RATES.mainCourse
+                                    + (c.breads || 0) * CATEGORY_RATES.breads
+                                    + (c.rice || 0) * CATEGORY_RATES.rice
+                                    + (c.drinks || 0) * CATEGORY_RATES.drinks
+                                    + (c.sides || 0) * CATEGORY_RATES.sides;
+                                  desc = `Starters: ${c.starter}, Main: ${c.mainCourse}, Breads: ${c.breads}, Rice: ${c.rice}, Drinks: ${c.drinks}, Sides: ${c.sides}`;
+                                }
+                                const mealGuestPrice = meal.guests * GUEST_RATE;
+                                const mealTotalPrice = mealMenuPrice + mealGuestPrice;
+                                dateMealSum += mealTotalPrice;
+
+                                return (
+                                  <div key={mealIdx} className="p-3.5 text-[12.5px] space-y-1">
+                                    <div className="flex justify-between items-center font-extrabold text-slate-900">
+                                      <span>{meal.name}</span>
+                                      <span className="text-[#0866ed]">₹{mealTotalPrice.toLocaleString('en-IN')}</span>
+                                    </div>
+                                    <div className="text-slate-500 font-medium">
+                                      Guests: {meal.guests} × ₹{GUEST_RATE} = ₹{(meal.guests * GUEST_RATE).toLocaleString('en-IN')}
+                                    </div>
+                                    <div className="text-slate-600 text-[11.5px]">
+                                      {desc}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+
+                              <div className="p-3 bg-slate-50/50 flex justify-between items-center text-[13px] font-bold text-slate-900">
+                                <span>Day {dateIdx + 1} Total</span>
+                                <span>₹{dateMealSum.toLocaleString('en-IN')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Price Calculation Box */}
+                    <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] text-[13px] space-y-2">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Menu Charges</span>
+                        <strong className="text-slate-900">₹{partyPricing.menuTotal.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Guest Charges</span>
+                        <strong className="text-slate-900">₹{partyPricing.guestTotal.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal</span>
+                        <strong className="text-slate-900">₹{partyPricing.subtotal.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div className="flex justify-between text-green-600 font-bold">
+                        <span>Coupon (HOLI20)</span>
+                        <strong>- ₹{partyPricing.discount.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Platform Fee (10%)</span>
+                        <strong className="text-slate-900">₹{partyPricing.platformFee.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>GST (18%)</span>
+                        <strong className="text-slate-900">₹{partyPricing.gst.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div className="flex justify-between items-center font-extrabold text-[#132b5c] text-[18px] sm:text-[20px] pt-3 border-t border-slate-200">
+                        <span>Final Amount</span>
+                        <span className="text-[#0866ed]">₹{partyPricing.finalAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    {/* Back & Next Navigation */}
+                    <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStep(5)}
+                        className="inline-flex items-center gap-1.5 bg-[#0866ed] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
+                      >
+                        <span>Continue →</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Non-Party Step 4: Payment Confirmation */
+                  <div className="space-y-4 animate-in fade-in text-center max-w-md mx-auto py-2">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-[#0866ed] flex items-center justify-center mx-auto shadow-sm">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-[20px] font-black text-[#0f2441] tracking-tight">Confirm Your Booking</h2>
+                      <p className="text-[12.5px] text-slate-500 mt-1">
+                        {activeTab === 'daily'
+                          ? `Pay ₹${dailyAdvanceAmount} (25% advance) to secure your daily staff requirement.`
+                          : 'Pay ₹299 processing fee to confirm your requirement.'}
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/40 rounded-2xl border border-blue-100 text-center">
+                      <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider block">
+                        {activeTab === 'daily' ? '25% Booking Advance' : 'Processing Fee'}
+                      </span>
+                      <span className="text-[32px] font-black text-[#0866ed] tracking-tight block">
+                        ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleFinalSubmitAndPay}
+                      disabled={isSubmitting}
+                      className="w-full bg-[#0866ed] hover:bg-[#0652ba] disabled:bg-slate-300 text-white py-3 rounded-xl font-extrabold text-[15px] shadow-[0_6px_20px_rgba(8,102,232,0.35)] transition-all flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                      <span>Pay ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'} & Confirm</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setStep(3)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                      className="text-[12.5px] font-bold text-slate-500 hover:text-slate-800"
                     >
-                      <ArrowLeft className="w-4 h-4" /> Back
+                      ← Back to Summary
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setStep(5)}
-                      className="inline-flex items-center gap-1.5 bg-[#0866e8] hover:bg-[#0652ba] text-white px-7 py-2.5 rounded-xl font-bold text-[13.5px] shadow-[0_4px_12px_rgba(8,102,232,0.3)] transition-all"
-                    >
-                      <span>Proceed to Payment →</span>
-                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ================= STEP 5: Payment (For Party Chef) ================= */}
+            {step === 5 && !bookingSuccess && isPartyTab && (
+              <div className="space-y-4 animate-in fade-in">
+                <div>
+                  <h2 className="text-[20px] font-extrabold text-[#132b5c] tracking-tight">Payment</h2>
+                  <p className="text-[13px] text-slate-500">
+                    Complete your payment to confirm your chef booking.
+                  </p>
+                </div>
+
+                {/* Total Payable Card */}
+                <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-2">
+                  <h3 className="font-extrabold text-[15px] text-slate-900">Booking Amount</h3>
+                  <div className="flex justify-between items-center font-extrabold text-[18px] sm:text-[21px] text-[#132b5c] pt-2 border-t border-slate-100">
+                    <span>Total Payable</span>
+                    <span className="text-[#0866ed]">₹{partyPricing.finalAmount.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
-              ) : (
-                /* Non-Party Step 4: Payment Confirmation */
-                <div className="space-y-4 animate-in fade-in text-center max-w-md mx-auto py-2">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-[#0866e8] flex items-center justify-center mx-auto shadow-sm">
-                    <IndianRupee className="w-6 h-6" />
-                  </div>
 
-                  <div>
-                    <h2 className="text-[20px] font-black text-[#0f2441] tracking-tight">Confirm Your Booking</h2>
-                    <p className="text-[12.5px] text-slate-500 mt-1">
-                      {activeTab === 'daily'
-                        ? `Pay ₹${dailyAdvanceAmount} (25% advance) to secure your daily staff requirement.`
-                        : 'Pay ₹299 processing fee to confirm your requirement.'}
-                    </p>
+                {/* Payment Options Card */}
+                <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-3">
+                  <h3 className="font-extrabold text-[15px] text-slate-900">Select Payment Method</h3>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'card' as const, label: '💳 Credit / Debit Card' },
+                      { id: 'upi' as const, label: '📱 UPI' },
+                      { id: 'netbanking' as const, label: '🏦 Net Banking' },
+                      { id: 'wallet' as const, label: '💰 Wallet' }
+                    ].map(opt => (
+                      <label 
+                        key={opt.id}
+                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                          paymentMethod === opt.id ? 'border-[#0866ed] bg-blue-50/50 font-bold text-[#0866ed]' : 'border-slate-200 hover:border-slate-300 bg-white font-medium text-slate-700'
+                        }`}
+                      >
+                        <input 
+                          type="radio"
+                          name="partyPaymentMethod"
+                          checked={paymentMethod === opt.id}
+                          onChange={() => setPaymentMethod(opt.id)}
+                          className="w-4 h-4 text-[#0866ed]"
+                        />
+                        <span className="text-[13.5px]">{opt.label}</span>
+                      </label>
+                    ))}
                   </div>
+                </div>
 
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/40 rounded-2xl border border-blue-100 text-center">
-                    <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider block">
-                      {activeTab === 'daily' ? '25% Booking Advance' : 'Processing Fee'}
-                    </span>
-                    <span className="text-[32px] font-black text-[#0866e8] tracking-tight block">
-                      ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'}
-                    </span>
-                    <span className="text-[11.5px] text-slate-500 block mt-1">
-                      Your booking will be processed immediately upon payment.
-                    </span>
-                  </div>
+                {/* Terms Confirmation Card */}
+                <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-white shadow-xs space-y-3">
+                  <h3 className="font-extrabold text-[15px] text-slate-900">Booking Confirmation</h3>
+                  <p className="text-[12.5px] text-slate-500 leading-relaxed">
+                    Please confirm that all dates, meals, guest counts and menu selections are correct.
+                  </p>
+                  <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 text-[12.5px] text-slate-700 font-semibold cursor-pointer">
+                    <input 
+                      type="checkbox"
+                      checked={partyAgreeTerms}
+                      onChange={(e) => setPartyAgreeTerms(e.target.checked)}
+                      className="w-4 h-4 text-[#0866ed] rounded mt-0.5"
+                    />
+                    <span>I agree to the booking terms and cancellation policy.</span>
+                  </label>
+                </div>
 
-                  <div className="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-1.5 text-[12px] font-semibold text-slate-600">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <Check className="w-4 h-4 stroke-[3]" />
-                      <span>Instant requirement verification & candidate mapping</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-green-700">
-                      <Check className="w-4 h-4 stroke-[3]" />
-                      <span>Free replacement support within contract validity</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-green-700">
-                      <Check className="w-4 h-4 stroke-[3]" />
-                      <span>Dedicated ZomoCook support manager</span>
-                    </div>
-                  </div>
-
+                {/* Back & Pay Now Navigation */}
+                <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setStep(4)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
                   <button
                     type="button"
                     onClick={handleFinalSubmitAndPay}
                     disabled={isSubmitting}
-                    className="w-full bg-[#0866e8] hover:bg-[#0652ba] disabled:bg-slate-300 text-white py-3 rounded-xl font-extrabold text-[15px] shadow-[0_6px_20px_rgba(8,102,232,0.35)] transition-all flex items-center justify-center gap-2"
+                    className="inline-flex items-center gap-2 bg-[#0866ed] hover:bg-[#0652ba] disabled:bg-slate-300 text-white px-8 py-3 rounded-xl font-extrabold text-[14.5px] shadow-[0_4px_14px_rgba(8,102,232,0.35)] transition-all"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Connecting Payment Gateway...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Pay ₹{activeTab === 'daily' ? dailyAdvanceAmount : '299'} & Confirm</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    className="text-[12.5px] font-bold text-slate-500 hover:text-slate-800"
-                  >
-                    ← Back to Summary
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    <span>Pay Now →</span>
                   </button>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* ================= STEP 5: Payment (For Party Chef Matching Screenshot 5) ================= */}
-          {step === 5 && !bookingSuccess && isPartyTab && (
-            <div className="space-y-4 animate-in fade-in">
-              <div>
-                <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Payment</h2>
-                <p className="text-[12.5px] text-slate-500">Review your booking amount and confirm your booking.</p>
               </div>
+            )}
 
-              {/* Price Calculation Box */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-[13px] space-y-2">
-                <div className="flex justify-between text-slate-600">
-                  <span>Cooking Charges</span>
-                  <strong className="text-slate-900">₹{partyCookingCharges.toLocaleString()}</strong>
+            {/* ================= SUCCESS SCREEN ================= */}
+            {bookingSuccess && (
+              <div className="py-8 text-center space-y-4 animate-in fade-in">
+                <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto shadow-md">
+                  <Check className="w-8 h-8 stroke-[3]" />
                 </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>GST (18%)</span>
-                  <strong className="text-slate-900">₹{partyGst.toLocaleString()}</strong>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Platform Fee (10%)</span>
-                  <strong className="text-slate-900">₹{partyPlatformFee.toLocaleString()}</strong>
-                </div>
-                {partyCouponDiscount > 0 && (
-                  <div className="flex justify-between text-green-600 font-bold">
-                    <span>Offer / Coupon Discount</span>
-                    <span>-₹{partyCouponDiscount.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-extrabold text-slate-900 pt-2 border-t border-slate-200 text-[14px]">
-                  <span>Grand Total</span>
-                  <span>₹{partyGrandTotal.toLocaleString()}</span>
-                </div>
-              </div>
 
-              {/* Coupon Box */}
-              <div className="flex gap-2">
-                <input 
-                  type="text"
-                  value={partyCouponCode}
-                  onChange={(e) => setPartyCouponCode(e.target.value.toUpperCase())}
-                  placeholder="Enter coupon code"
-                  className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium outline-none focus:border-[#0866e8]"
-                />
+                <div>
+                  <h2 className="text-[22px] font-black text-slate-900">Booking Confirmed Successfully!</h2>
+                  <p className="text-[13.5px] text-slate-600 mt-1 max-w-md mx-auto">
+                    Your requirement has been received with Reference ID: <strong className="text-[#0866ed]">{bookingRef}</strong>.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 max-w-md mx-auto text-left text-[13px] space-y-1.5 text-slate-600">
+                  <div><strong className="text-slate-800">Customer:</strong> {name} (+91 {phone})</div>
+                  <div><strong className="text-slate-800">Service:</strong> {activeTab === 'commercial' ? 'Commercial Staff Hiring' : activeTab === 'homecook' ? 'Domestic Home Cook' : activeTab === 'daily' ? 'Daily Basis Staff' : 'Chef for Party'}</div>
+                  <div><strong className="text-slate-800">Status:</strong> <span className="text-green-600 font-bold">Verified & Active</span></div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
-                    if (partyCouponCode === 'ZOMO10' || partyCouponCode === 'PARTY50') {
-                      setPartyCouponDiscount(200);
-                      Swal.fire({ icon: 'success', title: 'Coupon Applied!', text: '₹200 discount applied.', timer: 1500, showConfirmButton: false });
-                    } else if (partyCouponCode.trim()) {
-                      Swal.fire({ icon: 'info', title: 'Invalid Coupon', text: 'Coupon code not applicable.', confirmButtonColor: '#0866e8' });
-                    }
+                    setBookingSuccess(false);
+                    onClose();
                   }}
-                  className="px-5 py-2 bg-[#0866e8] hover:bg-[#0652ba] text-white font-bold text-[13px] rounded-xl transition-colors"
+                  className="bg-[#0866ed] hover:bg-[#0652ba] text-white px-8 py-2.5 rounded-xl font-bold text-[14px] shadow-md transition-all"
                 >
-                  Apply
+                  Done
                 </button>
               </div>
+            )}
 
-              {/* 25% Advance Highlight Box */}
-              <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/60 flex items-center justify-between">
-                <span className="font-bold text-slate-800 text-[13.5px]">25% Advance to Book</span>
-                <span className="font-black text-[#0866e8] text-[20px]">₹{partyAdvanceAmount.toLocaleString()}</span>
-              </div>
-
-              {/* Terms Checkbox */}
-              <label className="flex items-start gap-2 text-[12px] text-slate-600 cursor-pointer pt-1">
-                <input 
-                  type="checkbox"
-                  checked={partyAgreeTerms}
-                  onChange={(e) => setPartyAgreeTerms(e.target.checked)}
-                  className="w-4 h-4 text-[#0866e8] rounded mt-0.5"
-                />
-                <span>I confirm that the above booking details are correct and agree to proceed with the booking and payment.</span>
-              </label>
-
-              {/* Back & Pay Button */}
-              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setStep(4)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[13px]"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handleFinalSubmitAndPay}
-                  disabled={isSubmitting || !partyAgreeTerms}
-                  className="inline-flex items-center gap-2 bg-[#0866e8] hover:bg-[#0652ba] disabled:bg-slate-300 text-white px-7 py-2.5 rounded-xl font-extrabold text-[14px] shadow-[0_4px_14px_rgba(8,102,232,0.35)] transition-all"
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  <span>Pay 25% Advance & Confirm</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ================= SUCCESS SCREEN ================= */}
-          {bookingSuccess && (
-            <div className="py-8 text-center space-y-4 animate-in fade-in">
-              <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto shadow-md">
-                <Check className="w-8 h-8 stroke-[3]" />
-              </div>
-
-              <div>
-                <h2 className="text-[22px] font-black text-slate-900">Booking Confirmed Successfully!</h2>
-                <p className="text-[13.5px] text-slate-600 mt-1 max-w-md mx-auto">
-                  Your requirement has been received with Reference ID: <strong className="text-[#0866e8]">{bookingRef}</strong>.
-                </p>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 max-w-md mx-auto text-left text-[13px] space-y-1.5 text-slate-600">
-                <div><strong className="text-slate-800">Customer:</strong> {name} (+91 {phone})</div>
-                <div><strong className="text-slate-800">Service:</strong> {activeTab === 'commercial' ? 'Commercial Staff Hiring' : activeTab === 'homecook' ? 'Domestic Home Cook' : activeTab === 'daily' ? 'Daily Basis Staff' : 'Chef for Party'}</div>
-                <div><strong className="text-slate-800">Status:</strong> <span className="text-green-600 font-bold">Verified & Active</span></div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBookingSuccess(false);
-                  onClose();
-                }}
-                className="bg-[#0866e8] hover:bg-[#0652ba] text-white px-8 py-2.5 rounded-xl font-bold text-[14px] shadow-md transition-all"
-              >
-                Done
-              </button>
-            </div>
-          )}
-
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ================= MENU SELECTION MODAL ================= */}
+      {isMenuModalOpen && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setIsMenuModalOpen(false)}
+        >
+          <div 
+            className="w-full max-w-lg max-h-[85vh] bg-white rounded-2xl shadow-2xl p-5 overflow-y-auto flex flex-col space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-[17px] font-extrabold text-slate-900">Select Menu Items</h3>
+                <p className="text-[12px] text-slate-500">Select dishes for this meal.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMenuModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 overflow-y-auto max-h-[50vh] pr-1">
+              {menuCatalog.map(food => {
+                const isChecked = tempSelectedMenu.includes(food.name);
+                return (
+                  <label
+                    key={food.name}
+                    className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                      isChecked ? 'border-[#0866ed] bg-blue-50/40' : 'border-[#e1e7ef] hover:bg-slate-50 bg-white'
+                    }`}
+                  >
+                    <input 
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleMenuItemSelection(food.name)}
+                      className="w-4 h-4 text-[#0866ed] rounded"
+                    />
+                    <img 
+                      src={food.image} 
+                      alt={food.name} 
+                      className="w-12 h-12 rounded-lg object-cover shadow-2xs" 
+                    />
+                    <div>
+                      <div className="font-extrabold text-[13.5px] text-slate-900">{food.name}</div>
+                      <div className="text-[11.5px] text-slate-500 font-medium">{food.category}</div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={saveMenuModalItems}
+              className="w-full bg-[#0866ed] hover:bg-[#0652ba] text-white py-2.5 rounded-xl font-bold text-[14px] shadow-sm transition-colors"
+            >
+              Save Menu ({tempSelectedMenu.length} Selected)
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
