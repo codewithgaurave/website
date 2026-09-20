@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Plus, Trash2, ArrowRight, ArrowLeft, 
-  CheckCircle2, Loader2, Calendar, Utensils
+  CheckCircle2, Loader2, Calendar, Utensils, Search,
+  ChevronDown
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getApiBaseUrl } from '@/lib/apiConfig';
@@ -171,89 +172,406 @@ const COUPON_PERCENT = 20;
 export interface MenuItemCatalog {
   name: string;
   category: string;
+  cuisine: string;
   image: string;
+  isNonVeg?: boolean;
 }
 
+const primaryCuisineList = [
+  { id: 'North Indian', name: 'North Indian', icon: '🛎️' },
+  { id: 'Chinese', name: 'Chinese', icon: '🍜' },
+  { id: 'South Indian', name: 'South Indian', icon: '🍃' },
+  { id: 'Continental', name: 'Continental', icon: '🍴' },
+  { id: 'Non-Veg', name: 'Non-Veg', icon: '🍗' },
+  { id: 'Mughlai', name: 'Mughlai', icon: '👨‍🍳' },
+  { id: 'Punjabi', name: 'Punjabi', icon: '🌾' },
+  { id: 'Italian', name: 'Italian', icon: '🍕' },
+  { id: 'Mexican', name: 'Mexican', icon: '🌮' },
+  { id: 'Thai', name: 'Thai', icon: '🍲' },
+  { id: 'Fast Food', name: 'Fast Food', icon: '🍔' }
+];
+
+const secondaryCuisineList = [
+  { id: 'Desserts', name: 'Desserts & Sweets', icon: '🍨' },
+  { id: 'Beverages', name: 'Beverages', icon: '🍹' },
+  { id: 'Street Food', name: 'Street Food & Chaat', icon: '🥟' },
+  { id: 'Salads & Soups', name: 'Salads & Soups', icon: '🥗' }
+];
+
+const getCategoryBadgeStyle = (category: string) => {
+  const cat = category.toLowerCase();
+  if (cat.includes('main')) return 'bg-blue-50 text-[#0866ed] border-blue-100';
+  if (cat.includes('snack') || cat.includes('starter')) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+  if (cat.includes('breakfast')) return 'bg-amber-50 text-amber-800 border-amber-200';
+  if (cat.includes('bread')) return 'bg-orange-50 text-orange-800 border-orange-200';
+  if (cat.includes('rice')) return 'bg-cyan-50 text-cyan-800 border-cyan-200';
+  if (cat.includes('dessert') || cat.includes('sweet')) return 'bg-pink-50 text-pink-700 border-pink-100';
+  if (cat.includes('drink') || cat.includes('beverage')) return 'bg-purple-50 text-purple-700 border-purple-100';
+  return 'bg-slate-50 text-slate-700 border-slate-200';
+};
+
 const menuCatalog: MenuItemCatalog[] = [
-  {
-    name: "Poha",
-    category: "Breakfast",
-    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
-  },
-  {
-    name: "Sandwich",
-    category: "Breakfast",
-    image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=200"
-  },
-  {
-    name: "Aloo Paratha",
-    category: "Breakfast",
-    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
-  },
-  {
-    name: "Roti",
-    category: "Bread",
-    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
-  },
-  {
-    name: "Dal",
-    category: "Main Course",
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200"
-  },
-  {
-    name: "Rice",
-    category: "Rice",
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
-  },
-  {
-    name: "Sabji",
-    category: "Main Course",
-    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
-  },
-  {
-    name: "Egg Curry",
-    category: "Main Course",
-    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
-  },
-  {
-    name: "Chicken Curry",
-    category: "Main Course",
-    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200"
-  },
+  // North Indian
   {
     name: "Paneer Butter Masala",
+    cuisine: "North Indian",
     category: "Main Course",
     image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200"
   },
   {
+    name: "Chicken Tikka Masala",
+    cuisine: "North Indian",
+    category: "Main Course",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200"
+  },
+  {
     name: "Dal Makhani",
+    cuisine: "North Indian",
     category: "Main Course",
     image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200"
   },
   {
-    name: "Jeera Rice",
-    category: "Rice",
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
+    name: "Samosa",
+    cuisine: "North Indian",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
   },
   {
-    name: "Naan",
+    name: "Shahi Paneer",
+    cuisine: "North Indian",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200"
+  },
+  {
+    name: "Poha",
+    cuisine: "North Indian",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
+  },
+  {
+    name: "Aloo Paratha",
+    cuisine: "North Indian",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
+  },
+  {
+    name: "Butter Naan",
+    cuisine: "North Indian",
     category: "Bread",
     image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
   },
   {
-    name: "Tea / Coffee",
+    name: "Tandoori Roti",
+    cuisine: "North Indian",
+    category: "Bread",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+  {
+    name: "Jeera Rice",
+    cuisine: "North Indian",
+    category: "Rice",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
+  },
+  {
+    name: "Mix Veg Curry",
+    cuisine: "North Indian",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+
+  // Chinese
+  {
+    name: "Hakka Noodles",
+    cuisine: "Chinese",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=200"
+  },
+  {
+    name: "Chicken Fried Rice",
+    cuisine: "Chinese",
+    category: "Main Course",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=200"
+  },
+  {
+    name: "Veg Fried Rice",
+    cuisine: "Chinese",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=200"
+  },
+  {
+    name: "Veg Manchurian",
+    cuisine: "Chinese",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200"
+  },
+  {
+    name: "Spring Rolls",
+    cuisine: "Chinese",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200"
+  },
+  {
+    name: "Chilli Paneer",
+    cuisine: "Chinese",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200"
+  },
+  {
+    name: "Honey Chilli Potato",
+    cuisine: "Chinese",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=200"
+  },
+
+  // South Indian
+  {
+    name: "Idli Sambar",
+    cuisine: "South Indian",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200"
+  },
+  {
+    name: "Masala Dosa",
+    cuisine: "South Indian",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=200"
+  },
+  {
+    name: "Medu Vada",
+    cuisine: "South Indian",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200"
+  },
+  {
+    name: "Uttapam",
+    cuisine: "South Indian",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=200"
+  },
+  {
+    name: "Curd Rice",
+    cuisine: "South Indian",
+    category: "Rice",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
+  },
+
+  // Continental
+  {
+    name: "White Sauce Pasta",
+    cuisine: "Continental",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1621996346565-e3d5d6281699?w=200"
+  },
+  {
+    name: "Garlic Bread with Cheese",
+    cuisine: "Continental",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1619860860774-1e2e17343432?w=200"
+  },
+  {
+    name: "Grilled Veggies with Herb Rice",
+    cuisine: "Continental",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200"
+  },
+  {
+    name: "Russian Salad",
+    cuisine: "Continental",
+    category: "Sides",
+    image: "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=200"
+  },
+
+  // Non-Veg
+  {
+    name: "Butter Chicken",
+    cuisine: "Non-Veg",
+    category: "Main Course",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200"
+  },
+  {
+    name: "Chicken Biryani",
+    cuisine: "Non-Veg",
+    category: "Rice",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200"
+  },
+  {
+    name: "Chicken Tikka",
+    cuisine: "Non-Veg",
+    category: "Snacks",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=200"
+  },
+  {
+    name: "Egg Curry",
+    cuisine: "Non-Veg",
+    category: "Main Course",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+  {
+    name: "Mutton Rogan Josh",
+    cuisine: "Non-Veg",
+    category: "Main Course",
+    isNonVeg: true,
+    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200"
+  },
+
+  // Mughlai
+  {
+    name: "Mughlai Paneer Korma",
+    cuisine: "Mughlai",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200"
+  },
+  {
+    name: "Mughlai Dum Biryani",
+    cuisine: "Mughlai",
+    category: "Rice",
+    image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200"
+  },
+  {
+    name: "Shahi Tukda",
+    cuisine: "Mughlai",
+    category: "Dessert",
+    image: "https://images.unsplash.com/photo-1601303516534-4d1b5d9f2c15?w=200"
+  },
+
+  // Punjabi
+  {
+    name: "Chole Bhature",
+    cuisine: "Punjabi",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=200"
+  },
+  {
+    name: "Sarson Saag & Makki Roti",
+    cuisine: "Punjabi",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+  {
+    name: "Paneer Tikka",
+    cuisine: "Punjabi",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200"
+  },
+  {
+    name: "Amritsari Kulcha",
+    cuisine: "Punjabi",
+    category: "Bread",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200"
+  },
+
+  // Italian
+  {
+    name: "Margherita Pizza",
+    cuisine: "Italian",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200"
+  },
+  {
+    name: "Pasta Arrabiata (Red Sauce)",
+    cuisine: "Italian",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1621996346565-e3d5d6281699?w=200"
+  },
+  {
+    name: "Bruschetta",
+    cuisine: "Italian",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=200"
+  },
+
+  // Mexican
+  {
+    name: "Mexican Tacos",
+    cuisine: "Mexican",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=200"
+  },
+  {
+    name: "Veg Quesadilla",
+    cuisine: "Mexican",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?w=200"
+  },
+  {
+    name: "Nachos with Salsa & Cheese",
+    cuisine: "Mexican",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=200"
+  },
+
+  // Thai
+  {
+    name: "Thai Green Curry with Rice",
+    cuisine: "Thai",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=200"
+  },
+  {
+    name: "Pad Thai Noodles",
+    cuisine: "Thai",
+    category: "Main Course",
+    image: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=200"
+  },
+
+  // Fast Food
+  {
+    name: "Veg Burger",
+    cuisine: "Fast Food",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200"
+  },
+  {
+    name: "French Fries",
+    cuisine: "Fast Food",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=200"
+  },
+  {
+    name: "Veg Grilled Sandwich",
+    cuisine: "Fast Food",
+    category: "Breakfast",
+    image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=200"
+  },
+  {
+    name: "Pav Bhaji",
+    cuisine: "Fast Food",
+    category: "Snacks",
+    image: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200"
+  },
+
+  // Desserts
+  {
+    name: "Gulab Jamun",
+    cuisine: "Desserts",
+    category: "Dessert",
+    image: "https://images.unsplash.com/photo-1601303516534-4d1b5d9f2c15?w=200"
+  },
+  {
+    name: "Rasgulla",
+    cuisine: "Desserts",
+    category: "Dessert",
+    image: "https://images.unsplash.com/photo-1601303516534-4d1b5d9f2c15?w=200"
+  },
+
+  // Beverages
+  {
+    name: "Cold Coffee",
+    cuisine: "Beverages",
     category: "Drinks",
     image: "https://images.unsplash.com/photo-1512568400610-62da28bc8a13?w=200"
   },
   {
-    name: "Fruit Salad",
-    category: "Sides",
-    image: "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=200"
-  },
-  {
-    name: "Gulab Jamun",
-    category: "Dessert",
-    image: "https://images.unsplash.com/photo-1601303516534-4d1b5d9f2c15?w=200"
+    name: "Fresh Lime Soda",
+    cuisine: "Beverages",
+    category: "Drinks",
+    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=200"
   }
 ];
 
@@ -342,6 +660,22 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const [activeDateIndex, setActiveDateIndex] = useState<number | null>(null);
   const [activeMealIndex, setActiveMealIndex] = useState<number | null>(null);
   const [tempSelectedMenu, setTempSelectedMenu] = useState<string[]>([]);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [menuSearchQuery, setMenuSearchQuery] = useState<string>('');
+  const [foodTypeFilter, setFoodTypeFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
+  const [showMoreCuisines, setShowMoreCuisines] = useState<boolean>(false);
+
+  const toggleCuisineSelection = (cuisineId: string) => {
+    setSelectedCuisines(prev => 
+      prev.includes(cuisineId) ? prev.filter(c => c !== cuisineId) : [...prev, cuisineId]
+    );
+  };
+
+  const clearAllCuisines = () => {
+    setSelectedCuisines([]);
+    setMenuSearchQuery('');
+    setFoodTypeFilter('all');
+  };
 
   // Payment Method and Terms
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking' | 'wallet'>('card');
@@ -672,6 +1006,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     setActiveMealIndex(mealIdx);
     const existing = partyDates[dateIdx]?.meals[mealIdx]?.menu || [];
     setTempSelectedMenu([...existing]);
+    setMenuSearchQuery('');
     setIsMenuModalOpen(true);
   };
 
@@ -1584,7 +1919,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                           <button
                                             type="button"
                                             onClick={() => changePartyGuests(dateIdx, mealIdx, -1)}
-                                            className="w-8 h-8 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-bold text-[16px] flex items-center justify-center"
+                                            className="w-8 h-8 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-bold text-[16px] flex items-center justify-center transition-colors"
                                           >
                                             −
                                           </button>
@@ -1594,22 +1929,20 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                           <button
                                             type="button"
                                             onClick={() => changePartyGuests(dateIdx, mealIdx, 1)}
-                                            className="w-8 h-8 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-bold text-[16px] flex items-center justify-center"
+                                            className="w-8 h-8 rounded-lg bg-[#e8f0ff] hover:bg-blue-100 text-[#0866ed] font-bold text-[16px] flex items-center justify-center transition-colors"
                                           >
                                             +
                                           </button>
                                         </div>
 
-                                        {event.meals.length > 1 && (
-                                          <button
-                                            type="button"
-                                            onClick={() => removePartyMeal(dateIdx, mealIdx)}
-                                            className="text-slate-400 hover:text-red-500 p-1"
-                                            title="Remove Meal"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                          </button>
-                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => removePartyMeal(dateIdx, mealIdx)}
+                                          className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 flex items-center justify-center transition-colors border border-red-100 cursor-pointer"
+                                          title="Cancel / Delete Meal"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
                                       </div>
                                     </div>
                                   );
@@ -2185,10 +2518,13 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                             <div className="divide-y divide-[#edf0f5]">
                               {event.meals.map((meal, mealIdx) => {
                                 let mealMenuPrice = 0;
-                                let desc = '';
+                                let itemCount = 0;
+                                let selectedItemsText = '';
+
                                 if (meal.menuMode === 'now') {
                                   mealMenuPrice = meal.menu.length * CATEGORY_RATES.mainCourse;
-                                  desc = `${meal.menu.length} selected dishes (${meal.menu.join(', ')})`;
+                                  itemCount = meal.menu.length;
+                                  selectedItemsText = meal.menu.length > 0 ? meal.menu.join(', ') : 'None';
                                 } else if (meal.menuMode === 'later') {
                                   const c = meal.categories;
                                   mealMenuPrice = (c.starter || 0) * CATEGORY_RATES.starter
@@ -2197,29 +2533,63 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                     + (c.rice || 0) * CATEGORY_RATES.rice
                                     + (c.drinks || 0) * CATEGORY_RATES.drinks
                                     + (c.sides || 0) * CATEGORY_RATES.sides;
-                                  desc = `Starters: ${c.starter}, Main: ${c.mainCourse}, Breads: ${c.breads}, Rice: ${c.rice}, Drinks: ${c.drinks}, Sides: ${c.sides}`;
+                                  itemCount = (c.starter || 0) + (c.mainCourse || 0) + (c.breads || 0) + (c.rice || 0) + (c.drinks || 0) + (c.sides || 0);
+                                  const parts = [];
+                                  if (c.starter) parts.push(`Starters: ${c.starter}`);
+                                  if (c.mainCourse) parts.push(`Main: ${c.mainCourse}`);
+                                  if (c.breads) parts.push(`Breads: ${c.breads}`);
+                                  if (c.rice) parts.push(`Rice: ${c.rice}`);
+                                  if (c.drinks) parts.push(`Drinks: ${c.drinks}`);
+                                  if (c.sides) parts.push(`Sides: ${c.sides}`);
+                                  selectedItemsText = parts.length > 0 ? parts.join(', ') : 'None';
                                 }
                                 const mealGuestPrice = meal.guests * GUEST_RATE;
                                 const mealTotalPrice = mealMenuPrice + mealGuestPrice;
                                 dateMealSum += mealTotalPrice;
 
+                                let icon = '☀️';
+                                let iconBg = 'bg-[#fff8e6] text-[#e5a01a]';
+                                if (meal.name === 'Lunch') {
+                                  icon = '🍱';
+                                  iconBg = 'bg-[#eaf8ee] text-[#22a050]';
+                                } else if (meal.name === 'Dinner') {
+                                  icon = '🛎️';
+                                  iconBg = 'bg-[#fdeee9] text-[#e05638]';
+                                }
+
                                 return (
-                                  <div key={mealIdx} className="p-3.5 text-[12.5px] space-y-1">
-                                    <div className="flex justify-between items-center font-extrabold text-slate-900">
-                                      <span>{meal.name}</span>
-                                      <span className="text-[#0866ed]">₹{mealTotalPrice.toLocaleString('en-IN')}</span>
+                                  <div key={mealIdx} className="p-3.5 sm:p-4 flex items-start justify-between gap-3 text-[12.5px]">
+                                    <div className="flex items-start gap-3.5">
+                                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-[20px] shrink-0 ${iconBg}`}>
+                                        {icon}
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div className="font-extrabold text-[15px] text-slate-900 leading-snug">
+                                          {meal.name}
+                                        </div>
+                                        <div className="text-slate-600 font-medium text-[12px]">
+                                          Charges for Guest : {meal.guests} = <span className="text-[#0866ed] font-bold">Rs. {mealGuestPrice.toLocaleString('en-IN')}/-</span>
+                                        </div>
+                                        <div className="text-slate-600 font-medium text-[12px]">
+                                          Charges on selected items : {itemCount} = <span className="text-[#0866ed] font-bold">Rs. {mealMenuPrice.toLocaleString('en-IN')}/-</span>
+                                        </div>
+                                        <div className="text-slate-500 text-[11.5px] font-medium pt-0.5">
+                                          Selected Items : <span className="text-slate-700 font-semibold">{selectedItemsText}</span>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="text-slate-500 font-medium">
-                                      Guests: {meal.guests} × ₹{GUEST_RATE} = ₹{(meal.guests * GUEST_RATE).toLocaleString('en-IN')}
-                                    </div>
-                                    <div className="text-slate-600 text-[11.5px]">
-                                      {desc}
+
+                                    <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                      <span className="font-extrabold text-[16px] text-[#0866ed]">
+                                        ₹{mealTotalPrice.toLocaleString('en-IN')}
+                                      </span>
+                                      <ChevronDown className="w-4 h-4 text-slate-400" />
                                     </div>
                                   </div>
                                 );
                               })}
 
-                              <div className="p-3 bg-slate-50/50 flex justify-between items-center text-[13px] font-bold text-slate-900">
+                              <div className="p-3 bg-slate-50/70 flex justify-between items-center text-[13.5px] font-extrabold text-slate-900">
                                 <span>Day {dateIdx + 1} Total</span>
                                 <span>₹{dateMealSum.toLocaleString('en-IN')}</span>
                               </div>
@@ -2230,13 +2600,13 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     </div>
 
                     {/* Price Calculation Box */}
-                    <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] text-[13px] space-y-2">
+                    <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] text-[13px] space-y-2.5">
                       <div className="flex justify-between text-slate-600">
                         <span>Menu Charges</span>
                         <strong className="text-slate-900">₹{partyPricing.menuTotal.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="flex justify-between text-slate-600">
-                        <span>Guest Charges</span>
+                        <span>Cook Charges (Based on Guests)</span>
                         <strong className="text-slate-900">₹{partyPricing.guestTotal.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="flex justify-between text-slate-600">
@@ -2244,19 +2614,11 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                         <strong className="text-slate-900">₹{partyPricing.subtotal.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="flex justify-between text-green-600 font-bold">
-                        <span>Coupon (HOLI20)</span>
-                        <strong>- ₹{partyPricing.discount.toLocaleString('en-IN')}</strong>
-                      </div>
-                      <div className="flex justify-between text-slate-600">
-                        <span>Platform Fee (10%)</span>
-                        <strong className="text-slate-900">₹{partyPricing.platformFee.toLocaleString('en-IN')}</strong>
-                      </div>
-                      <div className="flex justify-between text-slate-600">
                         <span>GST (18%)</span>
-                        <strong className="text-slate-900">₹{partyPricing.gst.toLocaleString('en-IN')}</strong>
+                        <strong>₹{partyPricing.gst.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="flex justify-between items-center font-extrabold text-[#132b5c] text-[18px] sm:text-[20px] pt-3 border-t border-slate-200">
-                        <span>Final Amount</span>
+                        <span>Total Amount</span>
                         <span className="text-[#0866ed]">₹{partyPricing.finalAmount.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
@@ -2451,69 +2813,282 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       </div>
 
       {/* ================= MENU SELECTION MODAL ================= */}
-      {isMenuModalOpen && (
-        <div 
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => setIsMenuModalOpen(false)}
-        >
+      {isMenuModalOpen && (() => {
+        const filteredMenuItems = menuCatalog.filter(item => {
+          // Food Type filter
+          if (foodTypeFilter === 'veg' && item.isNonVeg) return false;
+          if (foodTypeFilter === 'non-veg' && !item.isNonVeg) return false;
+
+          const matchesCuisine = selectedCuisines.length === 0 || 
+            selectedCuisines.includes(item.cuisine) || 
+            (selectedCuisines.includes('Non-Veg') && item.isNonVeg);
+
+          const q = menuSearchQuery.trim().toLowerCase();
+          const matchesSearch = !q || 
+            item.name.toLowerCase().includes(q) || 
+            item.cuisine.toLowerCase().includes(q) || 
+            item.category.toLowerCase().includes(q);
+
+          return matchesCuisine && matchesSearch;
+        });
+
+        return (
           <div 
-            className="w-full max-w-lg max-h-[85vh] bg-white rounded-2xl shadow-2xl p-5 overflow-y-auto flex flex-col space-y-4"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+            onClick={() => setIsMenuModalOpen(false)}
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-[17px] font-extrabold text-slate-900">Select Menu Items</h3>
-                <p className="text-[12px] text-slate-500">Select dishes for this meal.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMenuModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2 overflow-y-auto max-h-[50vh] pr-1">
-              {menuCatalog.map(food => {
-                const isChecked = tempSelectedMenu.includes(food.name);
-                return (
-                  <label
-                    key={food.name}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                      isChecked ? 'border-[#0866ed] bg-blue-50/40' : 'border-[#e1e7ef] hover:bg-slate-50 bg-white'
-                    }`}
-                  >
-                    <input 
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleMenuItemSelection(food.name)}
-                      className="w-4 h-4 text-[#0866ed] rounded"
-                    />
-                    <img 
-                      src={food.image} 
-                      alt={food.name} 
-                      className="w-12 h-12 rounded-lg object-cover shadow-2xs" 
-                    />
-                    <div>
-                      <div className="font-extrabold text-[13.5px] text-slate-900">{food.name}</div>
-                      <div className="text-[11.5px] text-slate-500 font-medium">{food.category}</div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={saveMenuModalItems}
-              className="w-full bg-[#0866ed] hover:bg-[#0652ba] text-white py-2.5 rounded-xl font-bold text-[14px] shadow-sm transition-colors"
+            <div 
+              className="w-full max-w-xl max-h-[90vh] bg-white rounded-3xl shadow-2xl p-5 sm:p-6 overflow-hidden flex flex-col space-y-4 animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
             >
-              Save Menu ({tempSelectedMenu.length} Selected)
-            </button>
+              {/* Header */}
+              <div className="flex items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-[19px] font-extrabold text-slate-900 tracking-tight">Select Menu Items</h3>
+                  <p className="text-[12.5px] text-slate-500">Select dishes for this meal.</p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  {/* Food Type Toggle */}
+                  <div className="flex flex-col items-end">
+                    <span className="text-[11px] font-bold text-slate-500 mb-1">Food Type</span>
+                    <div className="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setFoodTypeFilter('all')}
+                        className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                          foodTypeFilter === 'all'
+                            ? 'bg-[#0866ed] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFoodTypeFilter('veg')}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                          foodTypeFilter === 'veg'
+                            ? 'bg-[#0866ed] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-emerald-700 hover:bg-white/60'
+                        }`}
+                      >
+                        <span>🌿</span>
+                        <span>Veg</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFoodTypeFilter('non-veg')}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                          foodTypeFilter === 'non-veg'
+                            ? 'bg-[#0866ed] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-rose-700 hover:bg-white/60'
+                        }`}
+                      >
+                        <span>🍗</span>
+                        <span>Non-Veg</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuModalOpen(false)}
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer self-center"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Cuisine Filter Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13.5px] font-bold text-slate-900">
+                    Cuisine <span className="text-slate-400 font-normal text-[12px]">(Select multiple)</span>
+                  </span>
+                  {selectedCuisines.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllCuisines}
+                      className="text-[12.5px] font-bold text-[#0866ed] hover:underline cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                {/* Cuisine Filter Chips */}
+                <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
+                  {primaryCuisineList.map(c => {
+                    const isSelected = selectedCuisines.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleCuisineSelection(c.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#0866ed] text-white border-[#0866ed] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                        }`}
+                      >
+                        {isSelected && (
+                          <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] text-white font-black">
+                            ✓
+                          </span>
+                        )}
+                        <span>{c.icon}</span>
+                        <span>{c.name}</span>
+                      </button>
+                    );
+                  })}
+
+                  {showMoreCuisines && secondaryCuisineList.map(c => {
+                    const isSelected = selectedCuisines.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleCuisineSelection(c.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-bold border transition-all cursor-pointer animate-in fade-in duration-150 ${
+                          isSelected
+                            ? 'bg-[#0866ed] text-white border-[#0866ed] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                        }`}
+                      >
+                        {isSelected && (
+                          <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] text-white font-black">
+                            ✓
+                          </span>
+                        )}
+                        <span>{c.icon}</span>
+                        <span>{c.name}</span>
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreCuisines(!showMoreCuisines)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[12.5px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                  >
+                    <span>{showMoreCuisines ? '- Less' : '+ More'}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMoreCuisines ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={menuSearchQuery}
+                  onChange={(e) => setMenuSearchQuery(e.target.value)}
+                  placeholder="Search menu items..."
+                  className="w-full pl-10 pr-9 py-2.5 bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-[13.5px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0866ed] focus:ring-1 focus:ring-[#0866ed] transition-all"
+                />
+                {menuSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setMenuSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-2.5 overflow-y-auto max-h-[42vh] pr-1">
+                {filteredMenuItems.length === 0 ? (
+                  <div className="text-center py-8 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                    <p className="text-[13.5px] font-bold text-slate-700">No dishes found</p>
+                    <p className="text-[12px] text-slate-400 mt-0.5">Try searching for something else or clearing cuisine filters.</p>
+                    {(selectedCuisines.length > 0 || menuSearchQuery || foodTypeFilter !== 'all') && (
+                      <button
+                        type="button"
+                        onClick={clearAllCuisines}
+                        className="mt-3 px-4 py-1.5 rounded-xl bg-[#0866ed] text-white hover:bg-[#0652ba] font-bold text-[12px] transition-colors shadow-xs cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  filteredMenuItems.map(food => {
+                    const isChecked = tempSelectedMenu.includes(food.name);
+                    return (
+                      <div
+                        key={food.name}
+                        onClick={() => toggleMenuItemSelection(food.name)}
+                        className={`flex items-center justify-between gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                          isChecked 
+                            ? 'border-[#0866ed] bg-[#f4f8ff] shadow-2xs ring-1 ring-[#0866ed]/30' 
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
+                              isChecked
+                                ? 'bg-[#0866ed] border-[#0866ed] text-white'
+                                : 'border-slate-300 bg-white'
+                            }`}
+                          >
+                            {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          </div>
+
+                          <img 
+                            src={food.image} 
+                            alt={food.name} 
+                            className="w-12 h-12 rounded-xl object-cover shadow-2xs shrink-0" 
+                          />
+
+                          <div>
+                            <div className="font-extrabold text-[14px] text-slate-900 leading-tight">{food.name}</div>
+                            <div className="text-[11.5px] text-slate-500 font-medium mt-0.5">{food.cuisine}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {food.isNonVeg ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                              <span>🍗</span>
+                              <span>Non-Veg</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span>🌿</span>
+                              <span>Veg</span>
+                            </span>
+                          )}
+
+                          <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border ${getCategoryBadgeStyle(food.category)}`}>
+                            {food.category}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Save Button */}
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={saveMenuModalItems}
+                  className="w-full bg-[#0866ed] hover:bg-[#0652ba] text-white py-3 rounded-xl font-extrabold text-[14.5px] shadow-md transition-all cursor-pointer active:scale-[0.99]"
+                >
+                  Save Menu ({tempSelectedMenu.length} Selected)
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }
