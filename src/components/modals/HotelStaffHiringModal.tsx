@@ -1468,7 +1468,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     } else if (activeTab === 'daily') {
       amountToPay = dailyAdvanceAmount;
       sourceType = `Daily Basis Staff Hiring (${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'})`;
-      const staffSummaryStr = dailyStaffList.map(s => `${s.role} (${s.genderPref || 'Any Gender'}) x ${s.count} for ${s.days} day(s)`).join(', ');
+      const staffSummaryStr = dailyStaffList.map(s => `${s.role} (${s.genderPref || 'Any Gender'}) x ${s.count} for ${s.days} day(s) from ${s.startDate || 'Today'} (${s.startTime || '10:00'} - ${s.endTime || '20:00'})`).join(', ');
       summaryMessage = `Hiring Purpose: ${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'}, ${dailyHiringPurpose === 'commercial' ? `Outlet: ${dailyOutletName}, Business Type: ${dailyBusinessType}, ` : ''}Address: ${dailyAddress}, Staff: ${staffSummaryStr}, Total: ₹${dailyTotalAmount}, Advance: ₹${dailyAdvanceAmount}`;
       requestPayload = {
         jobCategory: dailyHiringPurpose === 'commercial' ? 'hotel' : 'home',
@@ -1487,7 +1487,11 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           count: s.count,
           days: s.days,
           perDayRate: s.ratePerDay,
-          genderPref: s.genderPref
+          genderPref: s.genderPref,
+          startDate: s.startDate,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          timing: `${s.startTime || '10:00'} – ${s.endTime || '20:00'}`
         })),
         staffRequirements: dailyStaffList,
         dailyRequirement: dailyStaffList[0],
@@ -2560,6 +2564,44 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                               />
                             </div>
                           </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                                Start Date <span className="text-red-500">*</span>
+                              </label>
+                              <input 
+                                type="date"
+                                value={item.startDate || new Date().toISOString().split('T')[0]}
+                                onChange={(e) => updateDailyStaffRow(index, { startDate: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                                Start Time <span className="text-red-500">*</span>
+                              </label>
+                              <input 
+                                type="time"
+                                value={item.startTime || '10:00'}
+                                onChange={(e) => updateDailyStaffRow(index, { startTime: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                                End Time <span className="text-red-500">*</span>
+                              </label>
+                              <input 
+                                type="time"
+                                value={item.endTime || '20:00'}
+                                onChange={(e) => updateDailyStaffRow(index, { endTime: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2919,6 +2961,10 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                     </div>
                                     <div className="text-[11.5px] text-slate-500 mt-0.5">
                                       {item.count} Staff × {item.days} Day(s) @ ₹{item.ratePerDay}/day
+                                    </div>
+                                    <div className="text-[11px] text-[#0866ed] font-semibold mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                                      <span>📅 Start: {item.startDate || 'Today'}</span>
+                                      <span>⏰ Time: {item.startTime || '10:00'} - {item.endTime || '20:00'}</span>
                                     </div>
                                   </div>
                                   <div className="font-extrabold text-[14px] text-slate-900">

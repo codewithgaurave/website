@@ -38,7 +38,9 @@ export default function DailyBasisBookingForm() {
   const [count, setCount] = useState(1);
   const [shift, setShift] = useState(shifts[2]);
   const [days, setDays] = useState(1);
-  const [dateOfEvent, setDateOfEvent] = useState('');
+  const [dateOfEvent, setDateOfEvent] = useState(new Date().toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState('10:00');
+  const [endTime, setEndTime] = useState('20:00');
   const [perDayRate, setPerDayRate] = useState(1500);
 
   const [agreedToTerms, setAgreedToTerms] = useState(true);
@@ -129,10 +131,16 @@ export default function DailyBasisBookingForm() {
           event: event,
           dateOfEvent: dateOfEvent,
           familyMembers: `${days} Days`,
-          message: `Date: ${dateOfEvent}, Shift: ${shift}. ${message}`,
+          message: `Start Date: ${dateOfEvent}, Shift: ${shift} (${startTime} - ${endTime}), Days: ${days}. ${message}`,
           staffList: [{
             category: category,
             count: count,
+            days: days,
+            noOfDays: days,
+            startDate: dateOfEvent,
+            startTime: startTime,
+            endTime: endTime,
+            timing: `${startTime} – ${endTime} (${shift})`,
             salary: totalStaffSalary,
             food: 'Available',
             accommodation: 'Not Required'
@@ -427,7 +435,7 @@ export default function DailyBasisBookingForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase">Date of Event</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">Start Date / Date of Event <span className="text-red-500">*</span></label>
                   <input
                     type="date"
                     value={dateOfEvent}
@@ -437,7 +445,7 @@ export default function DailyBasisBookingForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-600 uppercase">Staff Role</label>
                   <select
@@ -476,6 +484,38 @@ export default function DailyBasisBookingForm() {
                       <option key={sh} value={sh}>{sh}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">Start Time <span className="text-red-500">*</span></label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[13.5px] font-semibold text-slate-800 focus:outline-none focus:border-[#024a9d]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">End Time <span className="text-red-500">*</span></label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[13.5px] font-semibold text-slate-800 focus:outline-none focus:border-[#024a9d]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">No. of Days</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={days}
+                    onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-slate-800 focus:outline-none focus:border-[#024a9d]"
+                  />
                 </div>
 
                 <div className="space-y-1">
