@@ -25,7 +25,9 @@ interface CommercialStaffItem {
 }
 
 interface DailyStaffItem {
+  id?: string;
   role: string;
+  genderPref?: string;
   count: number;
   ratePerDay: number;
   startDate: string;
@@ -629,15 +631,55 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const [dailyGenderPref, setDailyGenderPref] = useState('Any Gender');
   const [dailyOutletName, setDailyOutletName] = useState('');
   const [dailyAddress, setDailyAddress] = useState('');
-  const [dailyStaffRequirement, setDailyStaffRequirement] = useState<DailyStaffItem>({
-    role: 'Waiter',
-    count: 1,
-    ratePerDay: 999,
-    startDate: new Date().toISOString().split('T')[0],
-    startTime: '19:00',
-    endTime: '23:00',
-    days: 1
-  });
+  const [dailyStaffList, setDailyStaffList] = useState<DailyStaffItem[]>([
+    {
+      id: '1',
+      role: 'Waiter',
+      genderPref: 'Any Gender',
+      count: 1,
+      ratePerDay: 999,
+      startDate: new Date().toISOString().split('T')[0],
+      startTime: '19:00',
+      endTime: '23:00',
+      days: 1
+    }
+  ]);
+
+  const addDailyStaffRow = () => {
+    setDailyStaffList(prev => [
+      ...prev,
+      {
+        id: String(Date.now()),
+        role: 'Cook / Chef',
+        genderPref: 'Any Gender',
+        count: 1,
+        ratePerDay: 1499,
+        startDate: new Date().toISOString().split('T')[0],
+        startTime: '19:00',
+        endTime: '23:00',
+        days: 1
+      }
+    ]);
+  };
+
+  const removeDailyStaffRow = (index: number) => {
+    if (dailyStaffList.length <= 1) return;
+    setDailyStaffList(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateDailyStaffRow = (index: number, fields: Partial<DailyStaffItem>) => {
+    setDailyStaffList(prev => prev.map((item, i) => {
+      if (i === index) {
+        const updated = { ...item, ...fields };
+        if (fields.role) {
+          const selected = dailyRoles.find(r => r.role === fields.role);
+          updated.ratePerDay = selected ? selected.rate : 999;
+        }
+        return updated;
+      }
+      return item;
+    }));
+  };
   const [dailyAgreeTerms, setDailyAgreeTerms] = useState(true);
 
   // 4. Party Chef State (Dynamic 5-Step multi-date & multi-meal system)
@@ -1356,7 +1398,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   };
 
   // Daily calculations
-  const dailyStaffAmount = dailyStaffRequirement.ratePerDay * dailyStaffRequirement.count * dailyStaffRequirement.days;
+  const dailyStaffAmount = dailyStaffList.reduce((sum, item) => sum + ((item.ratePerDay || 999) * (item.count || 1) * (item.days || 1)), 0);
   const dailyGst = Math.round(dailyStaffAmount * 0.18);
   const dailyPlatformFee = Math.round(dailyStaffAmount * 0.10);
   const dailyTotalAmount = dailyStaffAmount + dailyGst + dailyPlatformFee;
@@ -1426,7 +1468,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     } else if (activeTab === 'daily') {
       amountToPay = dailyAdvanceAmount;
       sourceType = `Daily Basis Staff Hiring (${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'})`;
-      summaryMessage = `Hiring Purpose: ${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'}, ${dailyHiringPurpose === 'commercial' ? `Outlet: ${dailyOutletName}, Business Type: ${dailyBusinessType}, ` : ''}Address: ${dailyAddress}, Role: ${dailyStaffRequirement.role} x ${dailyStaffRequirement.count}, Gender Pref: ${dailyGenderPref}, Date: ${dailyStaffRequirement.startDate}, Timing: ${dailyStaffRequirement.startTime}-${dailyStaffRequirement.endTime}, Total: ₹${dailyTotalAmount}, Advance: ₹${dailyAdvanceAmount}`;
+      const staffSummaryStr = dailyStaffList.map(s => `${s.role} (${s.genderPref || 'Any Gender'}) x ${s.count} for ${s.days} day(s)`).join(', ');
+      summaryMessage = `Hiring Purpose: ${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'}, ${dailyHiringPurpose === 'commercial' ? `Outlet: ${dailyOutletName}, Business Type: ${dailyBusinessType}, ` : ''}Address: ${dailyAddress}, Staff: ${staffSummaryStr}, Total: ₹${dailyTotalAmount}, Advance: ₹${dailyAdvanceAmount}`;
       requestPayload = {
         jobCategory: dailyHiringPurpose === 'commercial' ? 'hotel' : 'home',
         bookingType: 'daily',
@@ -1439,10 +1482,15 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         address: dailyAddress.trim(),
         outletName: dailyHiringPurpose === 'commercial' ? dailyOutletName.trim() : 'Domestic Use',
         businessType: dailyHiringPurpose === 'commercial' ? dailyBusinessType : 'Domestic',
-        dailyRequirement: {
-          ...dailyStaffRequirement,
-          genderPreference: dailyGenderPref
-        },
+        staffList: dailyStaffList.map(s => ({
+          category: s.role,
+          count: s.count,
+          days: s.days,
+          perDayRate: s.ratePerDay,
+          genderPref: s.genderPref
+        })),
+        staffRequirements: dailyStaffList,
+        dailyRequirement: dailyStaffList[0],
         pricing: {
           staffCharges: dailyStaffAmount,
           gst: dailyGst,
@@ -2439,65 +2487,91 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                   <div className="space-y-3.5">
                     <div>
                       <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Daily Staff Requirement</h2>
-                      <p className="text-[12.5px] text-slate-500">Configure daily staff roles, hours and number of people.</p>
+                      <p className="text-[12.5px] text-slate-500">Configure daily staff roles, gender preference, hours and number of people.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Staff Role</label>
-                        <select 
-                          value={dailyStaffRequirement.role}
-                          onChange={(e) => {
-                            const selected = dailyRoles.find(r => r.role === e.target.value);
-                            setDailyStaffRequirement(prev => ({
-                              ...prev,
-                              role: e.target.value,
-                              ratePerDay: selected ? selected.rate : 999
-                            }));
-                          }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
-                        >
-                          {dailyRoles.map(r => <option key={r.role} value={r.role}>{r.role} (₹{r.rate}/day)</option>)}
-                        </select>
-                      </div>
+                    <div className="space-y-3 max-h-[46vh] overflow-y-auto pr-1">
+                      {dailyStaffList.map((item, index) => (
+                        <div key={item.id || index} className="p-4 rounded-2xl border border-slate-200 bg-white space-y-3 relative shadow-2xs">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <span className="font-extrabold text-[13.5px] text-[#0f2441] flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-blue-50 text-[#0866ed] text-[11px] font-black flex items-center justify-center border border-blue-100">
+                                {index + 1}
+                              </span>
+                              Staff Requirement #{index + 1}
+                            </span>
+                            {dailyStaffList.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeDailyStaffRow(index)}
+                                className="text-red-500 hover:text-red-700 text-[12px] font-bold inline-flex items-center gap-1 px-2 py-1 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Remove
+                              </button>
+                            )}
+                          </div>
 
-                      <div>
-                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Prefer Gender</label>
-                        <select 
-                          value={dailyGenderPref}
-                          onChange={(e) => setDailyGenderPref(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
-                        >
-                          <option value="Any Gender">Any Gender (No Preference)</option>
-                          <option value="Female">Female</option>
-                          <option value="Male">Male</option>
-                        </select>
-                      </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">Staff Role</label>
+                              <select 
+                                value={item.role}
+                                onChange={(e) => updateDailyStaffRow(index, { role: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                              >
+                                {dailyRoles.map(r => <option key={r.role} value={r.role}>{r.role} (₹{r.rate}/day)</option>)}
+                              </select>
+                            </div>
 
-                      <div>
-                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Staff</label>
-                        <input 
-                          type="number"
-                          min={1}
-                          max={30}
-                          value={dailyStaffRequirement.count}
-                          onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, count: Math.max(1, parseInt(e.target.value) || 1) }))}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
-                        />
-                      </div>
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">Prefer Gender</label>
+                              <select 
+                                value={item.genderPref || 'Any Gender'}
+                                onChange={(e) => updateDailyStaffRow(index, { genderPref: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                              >
+                                <option value="Any Gender">Any Gender (No Preference)</option>
+                                <option value="Female">Female</option>
+                                <option value="Male">Male</option>
+                              </select>
+                            </div>
 
-                      <div>
-                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Days</label>
-                        <input 
-                          type="number"
-                          min={1}
-                          max={30}
-                          value={dailyStaffRequirement.days}
-                          onChange={(e) => setDailyStaffRequirement(prev => ({ ...prev, days: Math.max(1, parseInt(e.target.value) || 1) }))}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
-                        />
-                      </div>
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Staff</label>
+                              <input 
+                                type="number"
+                                min={1}
+                                max={30}
+                                value={item.count}
+                                onChange={(e) => updateDailyStaffRow(index, { count: Math.max(1, parseInt(e.target.value) || 1) })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Days</label>
+                              <input 
+                                type="number"
+                                min={1}
+                                max={30}
+                                value={item.days}
+                                onChange={(e) => updateDailyStaffRow(index, { days: Math.max(1, parseInt(e.target.value) || 1) })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={addDailyStaffRow}
+                      className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-[#0866ed] bg-[#f0f6ff] hover:bg-[#e4efff] text-[#0866ed] font-extrabold text-[13.5px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    >
+                      <Plus className="w-4 h-4 stroke-[3]" />
+                      <span>+ Add More Staff</span>
+                    </button>
 
                     <div className="pt-3 flex items-center justify-between border-t border-slate-100">
                       <button
@@ -2717,21 +2791,170 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                   <div className="space-y-4">
                     <div>
                       <h2 className="text-[19px] font-extrabold text-[#0f2441] tracking-tight">Booking Summary</h2>
-                      <p className="text-[12.5px] text-slate-500">Review your requirement and amount before payment.</p>
+                      <p className="text-[12.5px] text-slate-500">Review your full requirement details and pricing breakdown before proceeding.</p>
                     </div>
 
-                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[12.5px] space-y-1">
-                      <div className="font-bold text-slate-900 mb-1">Customer Details</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
-                        <div><strong className="text-slate-800">Name:</strong> {name}</div>
-                        <div><strong className="text-slate-800">Mobile:</strong> +91 {phone}</div>
-                        {activeTab === 'commercial' && <div><strong className="text-slate-800">Business:</strong> {commercialBusinessName}</div>}
-                        {activeTab === 'daily' && <div><strong className="text-slate-800">Outlet/Event:</strong> {dailyOutletName}</div>}
-                        <div className="sm:col-span-2">
-                          <strong className="text-slate-800">Address:</strong>{' '}
-                          {activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : dailyAddress}
+                    <div className="space-y-3.5 max-h-[50vh] overflow-y-auto pr-1">
+                      
+                      {/* Customer Info Card */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-[12.5px] space-y-2">
+                        <div className="font-extrabold text-slate-900 text-[13.5px] border-b border-slate-200 pb-1.5 flex items-center justify-between">
+                          <span>Customer Details</span>
+                          <span className="text-[11.5px] font-bold text-[#0866ed] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                            {activeTab === 'commercial' ? 'Commercial Staff Hiring' : activeTab === 'homecook' ? 'Domestic Home Cook' : 'Daily Basis Staff'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-slate-600 font-medium">
+                          <div><strong className="text-slate-800 font-bold">Name:</strong> {name}</div>
+                          <div><strong className="text-slate-800 font-bold">Mobile:</strong> +91 {phone}</div>
+                          {email && <div><strong className="text-slate-800 font-bold">Email:</strong> {email}</div>}
+                          <div><strong className="text-slate-800 font-bold">City:</strong> {city}</div>
+                          
+                          {activeTab === 'commercial' && (
+                            <div><strong className="text-slate-800 font-bold">Business Name:</strong> {commercialBusinessName}</div>
+                          )}
+                          
+                          {activeTab === 'daily' && (
+                            <>
+                              <div><strong className="text-slate-800 font-bold">Hiring Purpose:</strong> {dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic / Event'}</div>
+                              {dailyHiringPurpose === 'commercial' && (
+                                <div><strong className="text-slate-800 font-bold">Outlet Name:</strong> {dailyOutletName} ({dailyBusinessType})</div>
+                              )}
+                            </>
+                          )}
+
+                          <div className="sm:col-span-2">
+                            <strong className="text-slate-800 font-bold">Address:</strong>{' '}
+                            {activeTab === 'commercial' ? commercialAddress : activeTab === 'homecook' ? homeAddress : dailyAddress}
+                          </div>
+
+                          {activeTab === 'commercial' && Object.keys(commercialFacilities).some(k => commercialFacilities[k]) && (
+                            <div className="sm:col-span-2">
+                              <strong className="text-slate-800 font-bold">Facilities Provided:</strong>{' '}
+                              {Object.keys(commercialFacilities).filter(k => commercialFacilities[k]).join(', ')}
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      {/* TAB 1: Commercial Staff List Breakdown */}
+                      {activeTab === 'commercial' && (
+                        <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                          <div className="font-extrabold text-slate-900 text-[13.5px] border-b border-slate-100 pb-1.5 flex items-center justify-between">
+                            <span>Staff Requirements ({commercialStaffList.length})</span>
+                            <span className="text-[11.5px] font-bold text-slate-500">Processing Fee: ₹299</span>
+                          </div>
+                          <div className="space-y-2">
+                            {commercialStaffList.map((staff, idx) => (
+                              <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[12.5px]">
+                                <div>
+                                  <div className="font-extrabold text-slate-900">{staff.staffCategory}</div>
+                                  <div className="text-[11.5px] text-slate-500">{staff.serviceCategory}</div>
+                                </div>
+                                <div className="flex items-center gap-3 text-[12px]">
+                                  <span className="px-2.5 py-1 bg-blue-50 text-[#0866ed] font-bold rounded-lg border border-blue-100">
+                                    {staff.noOfStaff} Staff
+                                  </span>
+                                  <span className="font-bold text-slate-800">Salary: {staff.salaryRange}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TAB 2: Domestic Home Cook Requirement Details */}
+                      {activeTab === 'homecook' && (
+                        <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                          <div className="font-extrabold text-slate-900 text-[13.5px] border-b border-slate-100 pb-1.5 flex items-center justify-between">
+                            <span>Cook Requirement Details</span>
+                            <span className="text-[11.5px] font-bold text-slate-500">Processing Fee: ₹299</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[12.5px]">
+                            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <span className="text-slate-500 text-[11px] font-bold block">COOK LEVEL / CATEGORY</span>
+                              <span className="font-extrabold text-slate-900">{cookLevels.find(c => c.id === homeCookLevel)?.name || 'Standard Cook'}</span>
+                            </div>
+                            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <span className="text-slate-500 text-[11px] font-bold block">GENDER PREFERENCE</span>
+                              <span className="font-extrabold text-slate-900">{homeGenderPref}</span>
+                            </div>
+                            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <span className="text-slate-500 text-[11px] font-bold block">FOOD PREFERENCE</span>
+                              <span className="font-extrabold text-slate-900">{homeFoodPref}</span>
+                            </div>
+                            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <span className="text-slate-500 text-[11px] font-bold block">SERVICE DURATION</span>
+                              <span className="font-extrabold text-slate-900">{homeDuration}</span>
+                            </div>
+                            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <span className="text-slate-500 text-[11px] font-bold block">FAMILY MEMBERS</span>
+                              <span className="font-extrabold text-slate-900">{homeFamilyMembers}</span>
+                            </div>
+                            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <span className="text-slate-500 text-[11px] font-bold block">START DATE</span>
+                              <span className="font-extrabold text-slate-900">{homeStartDate}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TAB 3: Daily Basis Staff List & Financial Breakdown */}
+                      {activeTab === 'daily' && (
+                        <div className="space-y-3">
+                          <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                            <div className="font-extrabold text-slate-900 text-[13.5px] border-b border-slate-100 pb-1.5 flex items-center justify-between">
+                              <span>Staff Requirements ({dailyStaffList.length})</span>
+                              <span className="text-[11.5px] font-bold text-[#0866ed]">Total Staff: {dailyStaffList.reduce((acc, curr) => acc + (curr.count || 1), 0)}</span>
+                            </div>
+                            <div className="space-y-2">
+                              {dailyStaffList.map((item, idx) => (
+                                <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[12.5px]">
+                                  <div>
+                                    <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                                      <span>{item.role}</span>
+                                      <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-50 text-[#0866ed] rounded-full border border-blue-100">
+                                        {item.genderPref || 'Any Gender'}
+                                      </span>
+                                    </div>
+                                    <div className="text-[11.5px] text-slate-500 mt-0.5">
+                                      {item.count} Staff × {item.days} Day(s) @ ₹{item.ratePerDay}/day
+                                    </div>
+                                  </div>
+                                  <div className="font-extrabold text-[14px] text-slate-900">
+                                    ₹{((item.ratePerDay || 999) * item.count * item.days).toLocaleString()}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Daily Financial Charges Breakdown Card */}
+                          <div className="p-4 bg-[#f8fafc] rounded-2xl border border-slate-200 space-y-2 text-[13px]">
+                            <div className="flex justify-between text-slate-600 font-medium">
+                              <span>Total Staff Charges</span>
+                              <span className="font-bold text-slate-900">₹{dailyStaffAmount.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 font-medium">
+                              <span>Platform Booking Fee (10%)</span>
+                              <span className="font-bold text-slate-900">₹{dailyPlatformFee.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 font-medium">
+                              <span>GST (18% on platform fee)</span>
+                              <span className="font-bold text-slate-900">₹{dailyGst.toLocaleString()}</span>
+                            </div>
+                            <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                              <span className="font-extrabold text-slate-900 text-[14px]">Total Booking Amount</span>
+                              <span className="font-black text-slate-900 text-[16px]">₹{dailyTotalAmount.toLocaleString()}</span>
+                            </div>
+                            <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex justify-between items-center text-[#0866ed]">
+                              <span className="font-black text-[13.5px]">25% Booking Advance Payable Now</span>
+                              <span className="font-black text-[17px]">₹{dailyAdvanceAmount.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                     </div>
 
                     <div className="pt-3 flex items-center justify-between border-t border-slate-100">
