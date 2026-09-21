@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Plus, Trash2, ArrowRight, ArrowLeft, 
   CheckCircle2, Loader2, Calendar, Utensils, Search,
-  ChevronDown
+  ChevronDown, Building2, Home as HomeIcon, Tag, Percent
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getApiBaseUrl } from '@/lib/apiConfig';
@@ -617,12 +617,16 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   const [homeAddress, setHomeAddress] = useState('');
   const [homeCookLevel, setHomeCookLevel] = useState('standard');
   const [homeFoodPref, setHomeFoodPref] = useState('Both Veg & Non-Veg');
+  const [homeGenderPref, setHomeGenderPref] = useState('Any Gender');
   const [homeDuration, setHomeDuration] = useState('10 Hours');
   const [homeFamilyMembers, setHomeFamilyMembers] = useState('3-4 Members');
   const [homeStartDate, setHomeStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [homeAgreeTerms, setHomeAgreeTerms] = useState(true);
 
   // 3. Daily Staff State
+  const [dailyHiringPurpose, setDailyHiringPurpose] = useState<'commercial' | 'domestic'>('commercial');
+  const [dailyBusinessType, setDailyBusinessType] = useState('Restaurant');
+  const [dailyGenderPref, setDailyGenderPref] = useState('Any Gender');
   const [dailyOutletName, setDailyOutletName] = useState('');
   const [dailyAddress, setDailyAddress] = useState('');
   const [dailyStaffRequirement, setDailyStaffRequirement] = useState<DailyStaffItem>({
@@ -638,6 +642,12 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
   // 4. Party Chef State (Dynamic 5-Step multi-date & multi-meal system)
   const [partyVenueAddress, setPartyVenueAddress] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCouponInfo, setAppliedCouponInfo] = useState<any | null>(null);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [availableOffers, setAvailableOffers] = useState<any[]>([]);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState<boolean>(false);
   const [partyNewDateInput, setPartyNewDateInput] = useState('');
   const [partyDates, setPartyDates] = useState<PartyDateEvent[]>([
     {
@@ -687,7 +697,91 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     };
 
     fetchDynamicMenu();
+
+    // Fetch dynamic offers created from ZomoCook_Backend / ZomoCook_AdminPanel
+    const fetchDynamicOffers = async () => {
+      try {
+        const API_BASE = getApiBaseUrl();
+        const res = await fetch(`${API_BASE}/api/offers?activeOnly=true&platform=Website&applicableOn=Chef for Party`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.offers) && json.offers.length > 0) {
+          setAvailableOffers(json.offers.filter((o: any) => o.isActive !== false));
+        } else {
+          setAvailableOffers([
+            { code: 'ZOMO40', title: 'ZOMO40', subtitle: 'Flat 40% OFF on 1st Booking', offerType: 'PERCENTAGE', discountValue: 40 },
+            { code: 'NEW50', title: 'NEW50', subtitle: 'Get 50% OFF on Daily Staff Hiring', offerType: 'PERCENTAGE', discountValue: 50 },
+            { code: 'PARTY20', title: 'PARTY20', subtitle: 'Get 20% OFF on Chef for Party', offerType: 'PERCENTAGE', discountValue: 20 }
+          ]);
+        }
+      } catch (e) {
+        setAvailableOffers([
+          { code: 'ZOMO40', title: 'ZOMO40', subtitle: 'Flat 40% OFF on 1st Booking', offerType: 'PERCENTAGE', discountValue: 40 },
+          { code: 'NEW50', title: 'NEW50', subtitle: 'Get 50% OFF on Daily Staff Hiring', offerType: 'PERCENTAGE', discountValue: 50 },
+          { code: 'PARTY20', title: 'PARTY20', subtitle: 'Get 20% OFF on Chef for Party', offerType: 'PERCENTAGE', discountValue: 20 }
+        ]);
+      }
+    };
+
+    fetchDynamicOffers();
   }, []);
+
+  const handleApplyCouponCode = async (codeToApply?: string) => {
+    const code = (codeToApply || couponInput).trim().toUpperCase();
+    if (!code) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const API_BASE = getApiBaseUrl();
+      const res = await fetch(`${API_BASE}/api/offers/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          orderAmount: partyPricing.subtotal,
+          platform: 'Website',
+          applicableOn: 'Chef for Party'
+        })
+      });
+      const data = await res.json();
+
+      if (data.success && data.valid) {
+        setAppliedCoupon(code);
+        setAppliedCouponInfo(data.offer || { code, discountAmount: data.discountAmount || 0 });
+        setCouponInput(code);
+        setCouponError(null);
+      } else {
+        setAppliedCoupon(null);
+        setAppliedCouponInfo(null);
+        setCouponError(data.message || 'Invalid or expired coupon code.');
+      }
+    } catch (err: any) {
+      // Fallback calculation if backend API offline
+      const matchingOffer = availableOffers.find(o => o.code === code);
+      if (matchingOffer || ['ZOMO20', 'PARTY20', 'ZOMO40', 'NEW50'].includes(code)) {
+        const discPercent = matchingOffer?.discountValue || (code === 'ZOMO40' ? 40 : code === 'NEW50' ? 50 : 20);
+        const discAmt = Math.round(partyPricing.subtotal * (discPercent / 100));
+        setAppliedCoupon(code);
+        setAppliedCouponInfo({
+          code,
+          title: matchingOffer?.title || code,
+          discountAmount: discAmt,
+          discountValue: discPercent,
+          offerType: matchingOffer?.offerType || 'PERCENTAGE'
+        });
+        setCouponInput(code);
+        setCouponError(null);
+      } else {
+        setCouponError('Invalid coupon code.');
+      }
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
 
   const toggleCuisineSelection = (cuisineId: string) => {
     setSelectedCuisines(prev => 
@@ -1094,7 +1188,26 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     });
 
     const subtotal = menuTotal + guestTotal;
-    const discount = Math.round(subtotal * (COUPON_PERCENT / 100));
+    
+    let discount = 0;
+    if (appliedCoupon) {
+      if (appliedCouponInfo && typeof appliedCouponInfo.discountAmount === 'number' && appliedCouponInfo.discountAmount > 0) {
+        discount = Math.min(appliedCouponInfo.discountAmount, subtotal);
+      } else if (appliedCouponInfo && appliedCouponInfo.offerType === 'PERCENTAGE' && appliedCouponInfo.discountValue) {
+        discount = Math.round(subtotal * (appliedCouponInfo.discountValue / 100));
+        if (appliedCouponInfo.maxDiscountValue && appliedCouponInfo.maxDiscountValue > 0) {
+          discount = Math.min(discount, appliedCouponInfo.maxDiscountValue);
+        }
+      } else {
+        const code = appliedCoupon.trim().toUpperCase();
+        let discountPercent = 20;
+        if (code === 'ZOMO40') discountPercent = 40;
+        else if (code === 'NEW50') discountPercent = 50;
+        else if (code === 'PARTY20' || code === 'ZOMO20') discountPercent = 20;
+        discount = Math.round(subtotal * (discountPercent / 100));
+      }
+    }
+
     const discountedAmount = Math.max(0, subtotal - discount);
     const platformFee = Math.round(discountedAmount * (PLATFORM_FEE_PERCENT / 100));
     const taxable = discountedAmount + platformFee;
@@ -1146,12 +1259,12 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         return;
       }
     } else if (activeTab === 'daily') {
-      if (!dailyOutletName.trim()) {
+      if (dailyHiringPurpose === 'commercial' && !dailyOutletName.trim()) {
         Swal.fire({ icon: 'warning', title: 'Outlet / Event Name Required', text: 'Please enter your outlet or event name.', confirmButtonColor: '#0866ed' });
         return;
       }
       if (!dailyAddress.trim()) {
-        Swal.fire({ icon: 'warning', title: 'Address Required', text: 'Please enter location / address.', confirmButtonColor: '#0866ed' });
+        Swal.fire({ icon: 'warning', title: 'Address Required', text: dailyHiringPurpose === 'commercial' ? 'Please enter outlet address.' : 'Please enter your home address.', confirmButtonColor: '#0866ed' });
         return;
       }
     } else if (activeTab === 'party') {
@@ -1294,7 +1407,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       amountToPay = 299;
       sourceType = 'Domestic Home Cook Hiring (₹299 Processing Fee)';
       const selectedLevel = cookLevels.find(c => c.id === homeCookLevel);
-      summaryMessage = `Address: ${homeAddress}, Level: ${selectedLevel?.name}, Food: ${homeFoodPref}, Duration: ${homeDuration}, Family: ${homeFamilyMembers}, Start: ${homeStartDate}`;
+      summaryMessage = `Address: ${homeAddress}, Level: ${selectedLevel?.name}, Food: ${homeFoodPref}, Gender Pref: ${homeGenderPref}, Duration: ${homeDuration}, Family: ${homeFamilyMembers}, Start: ${homeStartDate}`;
       requestPayload = {
         jobCategory: 'home',
         name: name.trim(),
@@ -1303,6 +1416,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         city: city.trim(),
         address: homeAddress.trim(),
         foodPreference: homeFoodPref,
+        genderPreference: homeGenderPref,
         cookType: selectedLevel?.name,
         serviceDuration: homeDuration,
         familyMembers: homeFamilyMembers,
@@ -1311,18 +1425,24 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       };
     } else if (activeTab === 'daily') {
       amountToPay = dailyAdvanceAmount;
-      sourceType = 'Daily Basis Staff Hiring (25% Advance Booking)';
-      summaryMessage = `Outlet: ${dailyOutletName}, Address: ${dailyAddress}, Role: ${dailyStaffRequirement.role} x ${dailyStaffRequirement.count}, Date: ${dailyStaffRequirement.startDate}, Timing: ${dailyStaffRequirement.startTime}-${dailyStaffRequirement.endTime}, Total: ₹${dailyTotalAmount}, Advance: ₹${dailyAdvanceAmount}`;
+      sourceType = `Daily Basis Staff Hiring (${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'})`;
+      summaryMessage = `Hiring Purpose: ${dailyHiringPurpose === 'commercial' ? 'Commercial' : 'Domestic'}, ${dailyHiringPurpose === 'commercial' ? `Outlet: ${dailyOutletName}, Business Type: ${dailyBusinessType}, ` : ''}Address: ${dailyAddress}, Role: ${dailyStaffRequirement.role} x ${dailyStaffRequirement.count}, Gender Pref: ${dailyGenderPref}, Date: ${dailyStaffRequirement.startDate}, Timing: ${dailyStaffRequirement.startTime}-${dailyStaffRequirement.endTime}, Total: ₹${dailyTotalAmount}, Advance: ₹${dailyAdvanceAmount}`;
       requestPayload = {
-        jobCategory: 'hotel',
+        jobCategory: dailyHiringPurpose === 'commercial' ? 'hotel' : 'home',
         bookingType: 'daily',
+        hiringPurpose: dailyHiringPurpose,
+        genderPreference: dailyGenderPref,
         name: name.trim(),
         phone: phone.trim().replace(/\D/g, ''),
         email: email.trim(),
         city: city.trim(),
-        outletName: dailyOutletName.trim(),
         address: dailyAddress.trim(),
-        dailyRequirement: dailyStaffRequirement,
+        outletName: dailyHiringPurpose === 'commercial' ? dailyOutletName.trim() : 'Domestic Use',
+        businessType: dailyHiringPurpose === 'commercial' ? dailyBusinessType : 'Domestic',
+        dailyRequirement: {
+          ...dailyStaffRequirement,
+          genderPreference: dailyGenderPref
+        },
         pricing: {
           staffCharges: dailyStaffAmount,
           gst: dailyGst,
@@ -1334,7 +1454,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
     } else if (activeTab === 'party') {
       amountToPay = partyPricing.finalAmount;
       sourceType = 'Chef for Party Booking (5-Step Master Flow)';
-      summaryMessage = `City: ${city}, Address: ${partyVenueAddress}, Dates: ${partyDates.map((d, i) => `Day ${i + 1} (${d.date} - ${d.eventType}): ${d.meals.map(m => `${m.name} [Guests: ${m.guests}, Mode: ${m.menuMode || 'none'}, Items: ${m.menuMode === 'now' ? m.menu.join(', ') : JSON.stringify(m.categories)}]`).join('; ')}`).join(' | ')}, Menu Charges: ₹${partyPricing.menuTotal}, Guests Charges: ₹${partyPricing.guestTotal}, Total: ₹${partyPricing.finalAmount}, Payment Mode: ${paymentMethod}`;
+      summaryMessage = `City: ${city}, Address: ${partyVenueAddress}, Dates: ${partyDates.map((d, i) => `Day ${i + 1} (${d.date} - ${d.eventType}): ${d.meals.map(m => `${m.name} [Guests: ${m.guests}, Mode: ${m.menuMode || 'none'}, Items: ${m.menuMode === 'now' ? m.menu.join(', ') : JSON.stringify(m.categories)}]`).join('; ')}`).join(' | ')}, Menu Charges: ₹${partyPricing.menuTotal}, Guests Charges: ₹${partyPricing.guestTotal}, Subtotal: ₹${partyPricing.subtotal}, Coupon: ${appliedCoupon || 'None'}, Discount: ₹${partyPricing.discount}, Total: ₹${partyPricing.finalAmount}, Payment Mode: ${paymentMethod}`;
 
       requestPayload = {
         jobCategory: 'home',
@@ -1344,9 +1464,11 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
         email: email.trim() || `${phone.replace(/\D/g, '')}@zomocook.in`,
         city: city.trim(),
         address: partyVenueAddress.trim(),
+        appliedCoupon,
         partyRequirement: {
           city: city.trim(),
           paymentMethod,
+          appliedCoupon,
           dates: partyDates,
           datesCount: partyDates.length,
           pricingBreakdown: partyPricing
@@ -1594,6 +1716,55 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                   </p>
                 </div>
 
+                {activeTab === 'daily' && (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-[#f8fafc] border border-slate-200/80 space-y-2.5">
+                    <label className="block text-[13px] font-extrabold text-[#132b5c]">
+                      Hiring Purpose <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Commercial Card */}
+                      <div 
+                        onClick={() => setDailyHiringPurpose('commercial')}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3.5 ${
+                          dailyHiringPurpose === 'commercial'
+                            ? 'border-[#0866ed] bg-blue-50/60 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                          dailyHiringPurpose === 'commercial' ? 'bg-[#0866ed] text-white' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-extrabold text-[14px] text-slate-900">Commercial</div>
+                          <div className="text-[11.5px] text-slate-500 font-medium">Hotel / Restaurant / Cafe / Outlet</div>
+                        </div>
+                      </div>
+
+                      {/* Domestic Card */}
+                      <div 
+                        onClick={() => setDailyHiringPurpose('domestic')}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3.5 ${
+                          dailyHiringPurpose === 'domestic'
+                            ? 'border-[#0866ed] bg-blue-50/60 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                          dailyHiringPurpose === 'domestic' ? 'bg-[#0866ed] text-white' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          <HomeIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-extrabold text-[14px] text-slate-900">Domestic</div>
+                          <div className="text-[11.5px] text-slate-500 font-medium">Home Cook / Personal Use</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Full Name */}
                   <div>
@@ -1728,26 +1899,51 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     </div>
                   )}
 
-                  {/* Daily Outlet Name */}
-                  {activeTab === 'daily' && (
-                    <div className="sm:col-span-2">
-                      <label className="block text-[13px] font-bold text-slate-700 mb-1">
-                        Outlet / Event Name <span className="text-red-500">*</span>
-                      </label>
-                      <input 
-                        type="text"
-                        value={dailyOutletName}
-                        onChange={(e) => setDailyOutletName(e.target.value)}
-                        placeholder="e.g. Royal Grand Hotel, Banquet Hall, Cafe, Private Event"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
-                      />
-                    </div>
+                  {/* Daily Outlet Name / Business Type */}
+                  {activeTab === 'daily' && dailyHiringPurpose === 'commercial' && (
+                    <>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                          Hotel / Restaurant / Cafe / Outlet Name <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          type="text"
+                          value={dailyOutletName}
+                          onChange={(e) => setDailyOutletName(e.target.value)}
+                          placeholder="e.g. The Royal Dine"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[13px] font-bold text-slate-700 mb-1">
+                          Business Type <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={dailyBusinessType}
+                          onChange={(e) => setDailyBusinessType(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all bg-white"
+                        >
+                          <option value="Restaurant">Restaurant</option>
+                          <option value="Cafe">Cafe</option>
+                          <option value="Hotel">Hotel</option>
+                          <option value="Bar / Lounge">Bar / Lounge</option>
+                          <option value="Bakery">Bakery</option>
+                          <option value="Cloud Kitchen">Cloud Kitchen</option>
+                          <option value="Catering">Catering</option>
+                          <option value="Food Truck">Food Truck</option>
+                          <option value="Office Canteen">Office Canteen</option>
+                          <option value="Mess / Hostel">Mess / Hostel</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </>
                   )}
 
-                  {/* Event Address */}
+                  {/* Address Field */}
                   <div className="sm:col-span-2">
                     <label className="block text-[13px] font-bold text-slate-700 mb-1">
-                      Event Address <span className="text-red-500">*</span>
+                      {activeTab === 'daily' ? (dailyHiringPurpose === 'commercial' ? 'Outlet Address' : 'Home Address') : activeTab === 'homecook' ? 'Home Address' : 'Event Address'} <span className="text-red-500">*</span>
                     </label>
                     <textarea 
                       rows={2}
@@ -1758,10 +1954,31 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                         else if (activeTab === 'daily') setDailyAddress(e.target.value);
                         else setPartyVenueAddress(e.target.value);
                       }}
-                      placeholder="Enter complete event address"
+                      placeholder={activeTab === 'daily' && dailyHiringPurpose === 'domestic' ? "Shalimar Garden, Indira Nagar, Lucknow - 226016" : "Enter complete address"}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0866ed] focus:ring-2 focus:ring-blue-100 outline-none text-[13.5px] font-medium transition-all resize-none"
                     />
                   </div>
+
+                  {/* Daily Info Callouts */}
+                  {activeTab === 'daily' && dailyHiringPurpose === 'commercial' && (
+                    <div className="sm:col-span-2 p-3.5 rounded-2xl bg-[#eff6ff] border border-[#bfdbfe] flex items-center gap-3 text-[12.5px] text-[#1e40af]">
+                      <div className="w-8 h-8 rounded-xl bg-[#dbeafe] text-[#1d4ed8] flex items-center justify-center shrink-0 text-[14px]">ℹ️</div>
+                      <div>
+                        <div className="font-extrabold text-[13px]">You have selected Commercial Purpose</div>
+                        <div className="text-slate-600 font-medium">Please provide your business details so we can suggest the best staff for your outlet.</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'daily' && dailyHiringPurpose === 'domestic' && (
+                    <div className="sm:col-span-2 p-3.5 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center gap-3 text-[12.5px] text-[#065f46]">
+                      <div className="w-8 h-8 rounded-xl bg-[#d1fae5] text-[#059669] flex items-center justify-center shrink-0 text-[14px]">🏡</div>
+                      <div>
+                        <div className="font-extrabold text-[13px]">You have selected Domestic Purpose</div>
+                        <div className="text-slate-600 font-medium">Please provide your home address so we can suggest the best cook for your home.</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Next Button */}
@@ -2155,6 +2372,19 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                       </div>
 
                       <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Gender Preference</label>
+                        <select 
+                          value={homeGenderPref}
+                          onChange={(e) => setHomeGenderPref(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                        >
+                          <option value="Any Gender">Any Gender (No Preference)</option>
+                          <option value="Female">Female Cook</option>
+                          <option value="Male">Male Cook</option>
+                        </select>
+                      </div>
+
+                      <div>
                         <label className="block text-[12px] font-bold text-slate-700 mb-1">Service Timing</label>
                         <select 
                           value={homeDuration}
@@ -2212,7 +2442,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                       <p className="text-[12.5px] text-slate-500">Configure daily staff roles, hours and number of people.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[12px] font-bold text-slate-700 mb-1">Staff Role</label>
                         <select 
@@ -2228,6 +2458,19 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                           className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none"
                         >
                           {dailyRoles.map(r => <option key={r.role} value={r.role}>{r.role} (₹{r.rate}/day)</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-bold text-slate-700 mb-1">Prefer Gender</label>
+                        <select 
+                          value={dailyGenderPref}
+                          onChange={(e) => setDailyGenderPref(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none focus:border-[#0866ed]"
+                        >
+                          <option value="Any Gender">Any Gender (No Preference)</option>
+                          <option value="Female">Female</option>
+                          <option value="Male">Male</option>
                         </select>
                       </div>
 
@@ -2422,7 +2665,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                             <div className="flex items-center gap-1.5">
                                               <button
                                                 type="button"
-                                                onClick={() => updateMealCategoryCount(dateIdx, mealIdx, cat.key, -1)}
+                                                onClick={() => changePartyCategoryCount(dateIdx, mealIdx, cat.key, -1)}
                                                 className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center transition-colors"
                                               >
                                                 -
@@ -2432,7 +2675,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                               </span>
                                               <button
                                                 type="button"
-                                                onClick={() => updateMealCategoryCount(dateIdx, mealIdx, cat.key, 1)}
+                                                onClick={() => changePartyCategoryCount(dateIdx, mealIdx, cat.key, 1)}
                                                 className="w-6 h-6 rounded-lg bg-[#0866ed] hover:bg-[#0652ba] text-white font-bold text-xs flex items-center justify-center transition-colors"
                                               >
                                                 +
@@ -2624,6 +2867,95 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                       })}
                     </div>
 
+                    {/* Have a Coupon Code Section */}
+                    <div className="p-4 rounded-2xl border border-blue-100 bg-[#f4f8ff] space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center font-black text-[18px]">
+                            %
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-[15px] text-[#132b5c]">Have a Coupon Code?</h4>
+                            <p className="text-[12px] text-slate-500">Apply your coupon and get instant discounts!</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <input 
+                            type="text"
+                            value={couponInput}
+                            onChange={(e) => {
+                              setCouponInput(e.target.value.toUpperCase());
+                              setCouponError(null);
+                            }}
+                            placeholder="Enter coupon code (e.g. ZOMO20)"
+                            className="flex-1 sm:w-60 px-3.5 py-2 rounded-xl border border-slate-200 focus:border-[#0866ed] bg-white text-[13px] font-bold outline-none uppercase placeholder:normal-case"
+                          />
+                          {appliedCoupon ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAppliedCoupon(null);
+                                setAppliedCouponInfo(null);
+                                setCouponInput('');
+                                setCouponError(null);
+                              }}
+                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[13px] rounded-xl transition-all border border-red-200"
+                            >
+                              Remove
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={isValidatingCoupon}
+                              onClick={() => handleApplyCouponCode()}
+                              className="px-6 py-2 bg-[#0866ed] hover:bg-[#0652ba] disabled:bg-slate-300 text-white font-bold text-[13px] rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                            >
+                              {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {couponError && (
+                        <p className="text-[12px] font-semibold text-red-600 pt-0.5">{couponError}</p>
+                      )}
+
+                      {/* Available Offers Cards */}
+                      <div className="pt-2">
+                        <div className="text-[12.5px] font-extrabold text-slate-800 mb-2">Available Offers</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          {availableOffers.map((o: any) => {
+                            const isApplied = appliedCoupon === o.code;
+                            const subtitleText = o.subtitle || o.title || (o.offerType === 'PERCENTAGE' ? `${o.discountValue}% OFF` : `₹${o.discountValue} Flat OFF`);
+                            return (
+                              <div 
+                                key={o.code || o._id} 
+                                className={`p-3 rounded-xl border bg-white flex items-center justify-between gap-2 ${isApplied ? 'border-green-500 bg-green-50/30' : 'border-slate-200'}`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-8 h-8 rounded-lg bg-pink-50 text-pink-500 flex items-center justify-center shrink-0 text-[14px]">
+                                    🏷️
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-black text-[13px] text-slate-900">{o.code}</div>
+                                    <div className="text-[11px] text-slate-500 truncate">{subtitleText}</div>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyCouponCode(o.code)}
+                                  className="text-[12px] font-bold text-[#0866ed] hover:underline whitespace-nowrap"
+                                >
+                                  {isApplied ? 'Applied' : 'Use Code'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Price Calculation Box */}
                     <div className="p-4 sm:p-5 rounded-2xl border border-[#dce4ef] bg-[#f8fafc] text-[13px] space-y-2.5">
                       <div className="flex justify-between text-slate-600">
@@ -2638,14 +2970,27 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                         <span>Subtotal</span>
                         <strong className="text-slate-900">₹{partyPricing.subtotal.toLocaleString('en-IN')}</strong>
                       </div>
-                      <div className="flex justify-between text-green-600 font-bold">
+                      {partyPricing.discount > 0 && (
+                        <div className="flex justify-between text-emerald-600 font-bold">
+                          <span>Discount ({appliedCoupon})</span>
+                          <strong>- ₹{partyPricing.discount.toLocaleString('en-IN')}</strong>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-slate-600 font-medium">
                         <span>GST (18%)</span>
-                        <strong>₹{partyPricing.gst.toLocaleString('en-IN')}</strong>
+                        <strong className="text-slate-900">₹{partyPricing.gst.toLocaleString('en-IN')}</strong>
                       </div>
                       <div className="flex justify-between items-center font-extrabold text-[#132b5c] text-[18px] sm:text-[20px] pt-3 border-t border-slate-200">
                         <span>Total Amount</span>
                         <span className="text-[#0866ed]">₹{partyPricing.finalAmount.toLocaleString('en-IN')}</span>
                       </div>
+
+                      {partyPricing.discount > 0 && (
+                        <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] font-bold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Great! You saved ₹{partyPricing.discount.toLocaleString('en-IN')} with coupon {appliedCoupon}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Back & Next Navigation */}

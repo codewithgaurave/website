@@ -636,7 +636,7 @@ export default function Services() {
             {/* ================= CARD 1: HOTEL STAFF ================= */}
             <article 
               className="zc-card zc-hotel"
-              onClick={() => setIsHotelModalOpen(true)}
+              onClick={() => setIsModalOpen(true)}
             >
               <div className="zc-shine"></div>
 

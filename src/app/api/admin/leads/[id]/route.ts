@@ -3,7 +3,7 @@ import connectToDatabase from '@/lib/mongoose';
 import Lead from '@/models/Lead';
 
 // PUT: Update a lead's status
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // SECURITY CHECK: Verify Admin Token
     const authHeader = request.headers.get('authorization');
@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ success: false, message: 'Unauthorized access' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { status } = body;
 
@@ -40,7 +40,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // DELETE: Remove a lead from the database completely
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // SECURITY CHECK: Verify Admin Token
     const authHeader = request.headers.get('authorization');
@@ -49,7 +49,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ success: false, message: 'Unauthorized access' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     await connectToDatabase();
     
     const deletedLead = await Lead.findByIdAndDelete(id);

@@ -24,7 +24,8 @@ import {
   Mail,
   Home,
   Bell,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Tag
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
   const [errorInfo, setErrorInfo] = useState('');
   
   // Navigation
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu-items' | 'enquiries' | 'settings'>('menu-items');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu-items' | 'enquiries' | 'offers' | 'settings'>('menu-items');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // CRM Leads state
@@ -109,6 +110,19 @@ export default function AdminDashboard() {
   const [newPassword, setNewPassword] = useState('');
   const [truePassword, setTruePassword] = useState('zomo123');
 
+  // Offers / Coupons state
+  const [offers, setOffers] = useState<any[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [showAddOfferForm, setShowAddOfferForm] = useState(false);
+  const [offerCode, setOfferCode] = useState('');
+  const [offerTitle, setOfferTitle] = useState('');
+  const [offerSubtitle, setOfferSubtitle] = useState('');
+  const [offerType, setOfferType] = useState<'PERCENTAGE' | 'FLAT'>('PERCENTAGE');
+  const [offerDiscountValue, setOfferDiscountValue] = useState<number | string>(20);
+  const [offerMinOrderValue, setOfferMinOrderValue] = useState<number | string>(0);
+  const [offerIsActive, setOfferIsActive] = useState(true);
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+
   // Sync password & auth state
   useEffect(() => {
     const savedPin = localStorage.getItem('ZOMO_ADMIN_PASS');
@@ -119,6 +133,7 @@ export default function AdminDashboard() {
       setIsAuthenticated(true);
       fetchLeads();
       fetchMenuItems();
+      fetchOffers();
     }
   }, []);
 
@@ -129,6 +144,7 @@ export default function AdminDashboard() {
       localStorage.setItem('ZOMO_IS_LOGGED_IN', 'true');
       fetchLeads();
       fetchMenuItems();
+      fetchOffers();
     } else {
       setErrorInfo('Invalid Admin Password.');
     }
@@ -163,6 +179,20 @@ export default function AdminDashboard() {
       console.error("Failed to fetch menu items", err);
     }
     setLoadingMenu(false);
+  };
+
+  const fetchOffers = async () => {
+    setLoadingOffers(true);
+    try {
+      const res = await fetch('/api/offers');
+      const json = await res.json();
+      if (json.success && Array.isArray(json.offers)) {
+        setOffers(json.offers);
+      }
+    } catch (err) {
+      console.error("Failed to fetch offers", err);
+    }
+    setLoadingOffers(false);
   };
 
   const resetMenuForm = () => {
@@ -522,6 +552,18 @@ export default function AdminDashboard() {
            >
              <Mail className="w-4 h-4 shrink-0" />
              <span>Enquiries / Leads</span>
+           </button>
+
+           <button 
+             onClick={() => { setActiveTab('offers'); setIsSidebarOpen(false); }}
+             className={`w-full flex items-center gap-3.5 px-4 py-3 font-bold text-[13.5px] rounded-xl transition-all ${
+               activeTab === 'offers' 
+                 ? 'bg-[#0866ed] text-white shadow-md' 
+                 : 'text-slate-300 hover:text-white hover:bg-white/5'
+             }`}
+           >
+             <Tag className="w-4 h-4 shrink-0" />
+             <span>Offers & Coupons</span>
            </button>
 
            <button 
@@ -1103,6 +1145,210 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+             </div>
+           )}
+
+           {/* ================= TAB 3.5: OFFERS & COUPONS ================= */}
+           {activeTab === 'offers' && (
+             <div className="space-y-6 animate-in fade-in duration-200">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                 <div>
+                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">Offers & Coupons</h2>
+                   <p className="text-[13px] text-slate-500 font-medium">Create and manage coupon codes for Party Chef & Staff Hiring.</p>
+                 </div>
+                 <button
+                   onClick={() => setShowAddOfferForm(!showAddOfferForm)}
+                   className="inline-flex items-center gap-2 bg-[#0866ed] hover:bg-[#0652ba] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all shrink-0 cursor-pointer"
+                 >
+                   <Plus className="w-4 h-4" />
+                   <span>{showAddOfferForm ? 'Close Form' : 'Create New Coupon'}</span>
+                 </button>
+               </div>
+
+               {/* Create Coupon Form */}
+               {showAddOfferForm && (
+                 <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm space-y-4">
+                   <h3 className="text-base font-extrabold text-slate-900">Add New Coupon Offer</h3>
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1">Coupon Code *</label>
+                       <input 
+                         type="text"
+                         value={offerCode}
+                         onChange={(e) => setOfferCode(e.target.value.toUpperCase())}
+                         placeholder="e.g. PARTY20"
+                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold uppercase outline-none focus:border-[#0866ed]"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1">Title *</label>
+                       <input 
+                         type="text"
+                         value={offerTitle}
+                         onChange={(e) => setOfferTitle(e.target.value)}
+                         placeholder="e.g. Party Chef Discount"
+                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-[#0866ed]"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1">Subtitle / Description</label>
+                       <input 
+                         type="text"
+                         value={offerSubtitle}
+                         onChange={(e) => setOfferSubtitle(e.target.value)}
+                         placeholder="e.g. Get 20% OFF on Chef for Party"
+                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-[#0866ed]"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1">Discount Type</label>
+                       <select
+                         value={offerType}
+                         onChange={(e) => setOfferType(e.target.value as any)}
+                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-[#0866ed]"
+                       >
+                         <option value="PERCENTAGE">Percentage (%)</option>
+                         <option value="FLAT">Flat Amount (₹)</option>
+                       </select>
+                     </div>
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1">Discount Value ({offerType === 'PERCENTAGE' ? '%' : '₹'}) *</label>
+                       <input 
+                         type="number"
+                         value={offerDiscountValue}
+                         onChange={(e) => setOfferDiscountValue(e.target.value)}
+                         placeholder="20"
+                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-[#0866ed]"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1">Min Order Value (₹)</label>
+                       <input 
+                         type="number"
+                         value={offerMinOrderValue}
+                         onChange={(e) => setOfferMinOrderValue(e.target.value)}
+                         placeholder="0"
+                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-[#0866ed]"
+                       />
+                     </div>
+                   </div>
+
+                   <div className="flex items-center justify-between pt-2">
+                     <label className="flex items-center gap-2 cursor-pointer">
+                       <input 
+                         type="checkbox"
+                         checked={offerIsActive}
+                         onChange={(e) => setOfferIsActive(e.target.checked)}
+                         className="w-4 h-4 text-[#0866ed] rounded"
+                       />
+                       <span className="text-xs font-bold text-slate-700">Active (Visible to users)</span>
+                     </label>
+                     <button
+                       type="button"
+                       disabled={isSubmittingOffer}
+                       onClick={async () => {
+                         if (!offerCode.trim() || !offerTitle.trim()) {
+                           Swal.fire({ icon: 'warning', title: 'Required Fields', text: 'Please enter Code and Title.' });
+                           return;
+                         }
+                         setIsSubmittingOffer(true);
+                         try {
+                           const res = await fetch('/api/offers', {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' },
+                             body: JSON.stringify({
+                               code: offerCode.trim().toUpperCase(),
+                               title: offerTitle.trim(),
+                               subtitle: offerSubtitle.trim() || `${offerDiscountValue}${offerType === 'PERCENTAGE' ? '%' : '₹'} OFF`,
+                               offerType,
+                               discountValue: Number(offerDiscountValue) || 0,
+                               minOrderValue: Number(offerMinOrderValue) || 0,
+                               isActive: offerIsActive,
+                               status: offerIsActive ? 'ACTIVE' : 'INACTIVE'
+                             })
+                           });
+                           const data = await res.json();
+                           if (data.success) {
+                             Swal.fire({ icon: 'success', title: 'Coupon Created!', text: `Coupon code '${offerCode}' saved successfully.` });
+                             setShowAddOfferForm(false);
+                             setOfferCode('');
+                             setOfferTitle('');
+                             setOfferSubtitle('');
+                             fetchOffers();
+                           } else {
+                             Swal.fire({ icon: 'error', title: 'Failed', text: data.message || 'Error saving coupon.' });
+                           }
+                         } catch (err: any) {
+                           Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+                         } finally {
+                           setIsSubmittingOffer(false);
+                         }
+                       }}
+                       className="px-6 py-2.5 bg-[#0866ed] hover:bg-[#0652ba] text-white font-bold text-sm rounded-xl shadow-md transition-all cursor-pointer"
+                     >
+                       Save Coupon Offer
+                     </button>
+                   </div>
+                 </div>
+               )}
+
+               {/* Offers Table */}
+               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                   <h3 className="font-extrabold text-slate-900 text-sm">All Active & Inactive Coupons ({offers.length})</h3>
+                   <button onClick={fetchOffers} className="p-2 text-slate-500 hover:text-slate-700">
+                     <RefreshCw className="w-4 h-4" />
+                   </button>
+                 </div>
+                 <div className="overflow-x-auto">
+                   <table className="w-full text-left border-collapse text-[13.5px]">
+                     <thead>
+                       <tr className="bg-slate-50/80 text-slate-500 font-bold text-[12px] uppercase border-b border-slate-200">
+                         <th className="px-5 py-3.5">Code</th>
+                         <th className="px-5 py-3.5">Title / Subtitle</th>
+                         <th className="px-5 py-3.5">Discount</th>
+                         <th className="px-5 py-3.5">Min Order</th>
+                         <th className="px-5 py-3.5">Status</th>
+                       </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-100">
+                       {offers.map((o, i) => (
+                         <tr key={o._id || i} className="hover:bg-slate-50 transition-colors">
+                           <td className="px-5 py-3.5 font-black text-slate-900 uppercase">
+                             <span className="bg-blue-50 text-[#0866ed] px-2.5 py-1 rounded-lg border border-blue-100">
+                               {o.code}
+                             </span>
+                           </td>
+                           <td className="px-5 py-3.5">
+                             <div className="font-bold text-slate-900">{o.title}</div>
+                             <div className="text-[11.5px] text-slate-500">{o.subtitle || '-'}</div>
+                           </td>
+                           <td className="px-5 py-3.5 font-bold text-emerald-600">
+                             {o.discountValue}{o.offerType === 'PERCENTAGE' ? '%' : ' ₹'} OFF
+                           </td>
+                           <td className="px-5 py-3.5 text-slate-600 font-medium">
+                             {o.minOrderValue > 0 ? `₹${o.minOrderValue}` : 'No Min'}
+                           </td>
+                           <td className="px-5 py-3.5">
+                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                               o.isActive !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                             }`}>
+                               {o.isActive !== false ? 'Active' : 'Inactive'}
+                             </span>
+                           </td>
+                         </tr>
+                       ))}
+                       {offers.length === 0 && (
+                         <tr>
+                           <td colSpan={5} className="px-5 py-8 text-center text-slate-500 font-medium">
+                             No coupon offers found. Click "Create New Coupon" to add one!
+                           </td>
+                         </tr>
+                       )}
+                     </tbody>
+                   </table>
+                 </div>
+               </div>
              </div>
            )}
 

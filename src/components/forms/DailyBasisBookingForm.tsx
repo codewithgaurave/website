@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Check, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Building2, Home as HomeIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getApiBaseUrl } from '@/lib/apiConfig';
 
@@ -21,6 +21,7 @@ export default function DailyBasisBookingForm() {
   const [step, setStep] = useState<number>(1);
 
   // Step 1: Basic Details
+  const [hiringPurpose, setHiringPurpose] = useState<'commercial' | 'domestic'>('commercial');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -31,6 +32,7 @@ export default function DailyBasisBookingForm() {
   const [message, setMessage] = useState('');
 
   // Step 2: Daily Staff Requirement
+  const [genderPref, setGenderPref] = useState('Any Gender');
   const [event, setEvent] = useState(eventOccasions[0]);
   const [category, setCategory] = useState('Cook / Chef');
   const [count, setCount] = useState(1);
@@ -246,6 +248,52 @@ export default function DailyBasisBookingForm() {
               </p>
             </div>
 
+            {/* Hiring Purpose Selection */}
+            <div className="p-4 rounded-2xl bg-[#f8fafc] border border-slate-200/80 space-y-2.5">
+              <label className="block text-[13px] font-extrabold text-[#0f172a]">
+                Hiring Purpose <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div 
+                  onClick={() => setHiringPurpose('commercial')}
+                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3.5 ${
+                    hiringPurpose === 'commercial'
+                      ? 'border-[#024a9d] bg-blue-50/60 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    hiringPurpose === 'commercial' ? 'bg-[#024a9d] text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-[14px] text-slate-900">Commercial</div>
+                    <div className="text-[11.5px] text-slate-500 font-medium">Hotel / Restaurant / Cafe / Outlet</div>
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => setHiringPurpose('domestic')}
+                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3.5 ${
+                    hiringPurpose === 'domestic'
+                      ? 'border-[#024a9d] bg-blue-50/60 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    hiringPurpose === 'domestic' ? 'bg-[#024a9d] text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    <HomeIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-[14px] text-slate-900">Domestic</div>
+                    <div className="text-[11.5px] text-slate-500 font-medium">Home Cook / Personal Use</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
                 <label className="text-[13px] font-bold text-slate-700">
@@ -401,6 +449,19 @@ export default function DailyBasisBookingForm() {
                     <option value="Party Master Chef">Party Master Chef</option>
                     <option value="Waiter / Helper">Waiter / Helper</option>
                     <option value="Bartender">Bartender</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">Prefer Gender</label>
+                  <select
+                    value={genderPref}
+                    onChange={(e) => setGenderPref(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-[#024a9d]"
+                  >
+                    <option value="Any Gender">Any Gender (No Preference)</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
                   </select>
                 </div>
 
