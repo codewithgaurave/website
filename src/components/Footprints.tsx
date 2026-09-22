@@ -8,27 +8,25 @@ export default function Footprints() {
     { value: "125,000+", label: "People Served" }
   ];
 
-  // Exact coordinates matching the provided solid grey map layout
-  const dots = [
-    { top: '23%', left: '30%' }, // North (Punjab region)
-    { top: '31%', left: '29%' }, // North Center (Delhi/Haryana)
-    { top: '37%', left: '21%' }, // West (Rajasthan)
-    { top: '36%', left: '40%' }, // Center (MP/UP border)
-    { top: '48%', left: '33%' }, // Center-West (Maharashtra)
-    { top: '47%', left: '52%' }, // East (Bengal/Odisha)
-    { top: '38%', left: '72%' }, // Far East (Assam)
-    { top: '74%', left: '26%' }, // South (Karnataka/Kerala)
+  // Radar pulse animation coordinates aligned with the official map dots
+  const pulseLocations = [
+    { top: '25.8%', left: '42%' }, // Punjab / Northern Hub
+    { top: '36.5%', left: '41.5%' }, // Delhi NCR
+    { top: '42.2%', left: '32.3%' }, // Rajasthan (Jaipur)
+    { top: '41.2%', left: '51.2%' }, // Uttar Pradesh (Lucknow)
+    { top: '52.4%', left: '44%' }, // Central India (Bhopal)
+    { top: '52%', left: '62.2%' }, // Eastern Hub (Kolkata)
+    { top: '43.8%', left: '83.6%' }, // North East (Guwahati)
+    { top: '79.2%', left: '38%' }, // Southern Hub (Bengaluru)
   ];
 
   return (
     <section className="pt-8 pb-16 bg-slate-50 relative overflow-hidden">
-      
       {/* Subtle Background Glow */}
       <div className="absolute top-[30%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
-          
           {/* Left Content */}
           <div className="max-w-xl">
             <h2 className="text-3xl md:text-4xl lg:text-[42px] font-extrabold text-slate-900 tracking-tight mb-8">
@@ -55,42 +53,29 @@ export default function Footprints() {
           </div>
 
           {/* Right Content - Map */}
-          <div className="relative w-full max-w-lg mx-auto lg:ml-auto aspect-[4/5] flex items-center justify-center">
-            
-            {/* Extremely precise Map Image Structure using CSS Masking for exact grey color */}
-            <div className="relative w-[340px] h-[380px] sm:w-[420px] sm:h-[480px]">
-              {/* Perfectly Solid Smooth Grey Map using Mask-Image */}
-              <div 
-                className="absolute inset-0 bg-[#c4c6ca] pointer-events-none"
-                style={{
-                  maskImage: 'url(https://raw.githubusercontent.com/djaiss/mapsicon/master/all/in/vector.svg)',
-                  maskSize: 'contain',
-                  maskRepeat: 'no-repeat',
-                  maskPosition: 'center',
-                  WebkitMaskImage: 'url(https://raw.githubusercontent.com/djaiss/mapsicon/master/all/in/vector.svg)',
-                  WebkitMaskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                }}
-              ></div>
-              
-              {/* Floating Active Dots over the Map - Perfectly matched to User's Latest Image */}
-              {dots.map((dot, index) => (
+          <div className="relative w-full max-w-lg mx-auto lg:ml-auto flex items-center justify-center">
+            <div className="relative w-full max-w-[480px]">
+              {/* Correct Official India Map with Full Boundaries and States */}
+              <img 
+                src="/india-map.png" 
+                alt="ZomoCook Pan India Presence Map" 
+                className="w-full h-auto object-contain drop-shadow-sm select-none"
+              />
+
+              {/* Subtle Live Radar Pulse Rings over Active Locations */}
+              {pulseLocations.map((loc, index) => (
                 <div 
                   key={index} 
-                  className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-                  style={{ top: dot.top, left: dot.left }}
+                  className="absolute z-20 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ top: loc.top, left: loc.left }}
                 >
-                  <div className="relative flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.25)]">
-                    {/* Flat Solid Light Blue Dot with White Border casting shadow */}
-                    <span className="relative inline-flex rounded-full h-[18px] w-[18px] bg-[#4285f4] border-[2px] border-white transition-transform hover:scale-125 duration-300 cursor-pointer"></span>
-                  </div>
+                  <span className="relative flex h-6 w-6 items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4285f4] opacity-40"></span>
+                  </span>
                 </div>
               ))}
             </div>
-            
           </div>
-          
         </div>
       </div>
     </section>

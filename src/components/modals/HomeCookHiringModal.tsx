@@ -417,8 +417,8 @@ export default function HomeCookHiringModal({ isOpen, onClose }: HomeCookHiringM
 
         {/* Stepper Bar */}
         {!bookingSuccess && (
-          <div className="px-5 py-2.5 bg-slate-50/80 border-b border-slate-100 flex-shrink-0">
-            <div className="flex items-center justify-between max-w-2xl mx-auto">
+          <div className="px-5 py-3.5 sm:py-4 bg-slate-50/80 border-b border-slate-100 flex-shrink-0 select-none">
+            <div className="flex items-center justify-between max-w-2xl mx-auto px-1 sm:px-2">
               {[
                 { num: 1, label: 'Basic Details' },
                 { num: 2, label: 'Cook Requirement' },
@@ -426,24 +426,28 @@ export default function HomeCookHiringModal({ isOpen, onClose }: HomeCookHiringM
                 { num: 4, label: 'Processing Fee' }
               ].map((s, idx) => (
                 <React.Fragment key={s.num}>
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black transition-all ${
+                  <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] aspect-square rounded-full shrink-0 flex items-center justify-center text-[11px] sm:text-[12px] font-black transition-all ${
                       step === s.num 
-                        ? 'bg-[#024a9d] text-white shadow-sm' 
+                        ? 'bg-[#024a9d] text-white shadow-sm ring-3 ring-blue-100' 
                         : step > s.num 
-                        ? 'bg-green-600 text-white' 
+                        ? 'bg-green-600 text-white shadow-xs' 
                         : 'bg-slate-200 text-slate-500'
                     }`}>
-                      {step > s.num ? <Check className="w-3.5 h-3.5" /> : s.num}
+                      {step > s.num ? (
+                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                      ) : (
+                        <span className="leading-none text-[12px] sm:text-[13px] font-black">{s.num}</span>
+                      )}
                     </div>
-                    <span className={`text-[12px] font-bold hidden sm:inline ${
+                    <span className={`text-[12px] font-bold hidden sm:inline whitespace-nowrap ${
                       step === s.num ? 'text-[#024a9d]' : step > s.num ? 'text-green-700' : 'text-slate-400'
                     }`}>
                       {s.label}
                     </span>
                   </div>
                   {idx < 3 && (
-                    <div className={`flex-1 h-[2px] mx-2 transition-all ${
+                    <div className={`flex-1 h-[2px] mx-2 sm:mx-3 min-w-[8px] sm:min-w-[12px] transition-all rounded-full ${
                       step > s.num ? 'bg-green-500' : 'bg-slate-200'
                     }`} />
                   )}

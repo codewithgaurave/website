@@ -894,9 +894,10 @@ export default function Services() {
 
               <div className="zc-chef-photo">
                 <img
-                  src="https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=400&q=80"
+                  src="/chef-occasion.jpg"
                   alt="Private occasion chef"
                   loading="lazy"
+                  style={{ objectPosition: 'center 20%' }}
                 />
               </div>
 

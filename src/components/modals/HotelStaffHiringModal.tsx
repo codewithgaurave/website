@@ -729,7 +729,9 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
             cuisine: item.cuisine,
             category: item.category,
             isNonVeg: item.foodType === 'non-veg' || !!item.isNonVeg,
-            image: item.image || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200'
+            image: (item.image && (item.image.startsWith('http://') || item.image.startsWith('https://')))
+              ? item.image 
+              : `https://api.zomocook.in/${(item.image || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200').replace(/^\/+/, '')}`
           }));
           setDynamicMenuCatalog(mapped);
         }
@@ -1634,7 +1636,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   return (
     <>
       <div 
-        className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-3.5 sm:p-5 md:p-6 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
         onClick={(e) => {
           if (e.target === e.currentTarget && !isSubmitting) onClose();
         }}
@@ -1644,7 +1646,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-20">
+          <div className="px-5 sm:px-7 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-20">
             <div>
               <div className="text-[22px] font-extrabold text-[#073b8f] tracking-tight">
                 Zomo<span className="text-[#ed1c24]">Cook</span>
@@ -1656,14 +1658,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* 4 Service Tabs */}
-          <div className="px-3 sm:px-5 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-50/80 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
             {[
               { id: 'commercial' as ServiceTabType, shortLabel: '🏨 Hotel Staff', label: '🏨 Commercial Hiring' },
               { id: 'homecook' as ServiceTabType, shortLabel: '🏠 Home Cook', label: '🏠 Domestic Home Cook' },
@@ -1695,10 +1697,10 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
           {/* Stepper Progress Bar */}
           {!bookingSuccess && (
-            <div className="px-3 sm:px-6 py-2.5 bg-white border-b border-slate-100 overflow-hidden select-none">
+            <div className="px-4 sm:px-8 py-3.5 sm:py-4.5 bg-white border-b border-slate-100 select-none">
               {isPartyTab ? (
                 /* 5 Steps for Party */
-                <div className="flex items-center justify-between w-full max-w-2xl mx-auto relative py-0.5">
+                <div className="flex items-center justify-between w-full max-w-2xl mx-auto relative px-1 sm:px-2">
                   {[
                     { num: 1, label: 'Basic Details' },
                     { num: 2, label: 'Event Details' },
@@ -1707,25 +1709,37 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     { num: 5, label: 'Payment' }
                   ].map((s, idx, arr) => (
                     <React.Fragment key={s.num}>
-                      <div className="flex items-center gap-1 sm:gap-1.5 relative z-10 shrink-0">
-                        <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[11px] sm:text-[12px] font-bold transition-all ${
-                          step > s.num ? 'bg-green-600 text-white' : step === s.num ? 'bg-[#0866ed] text-white shadow-sm ring-2 ring-blue-200' : 'bg-slate-100 text-slate-400'
+                      <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] aspect-square rounded-full shrink-0 flex items-center justify-center transition-all ${
+                          step > s.num 
+                            ? 'bg-green-600 text-white shadow-xs' 
+                            : step === s.num 
+                            ? 'bg-[#0866ed] text-white shadow-sm ring-3 ring-blue-100' 
+                            : 'bg-slate-100 text-slate-400'
                         }`}>
-                          {step > s.num ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
+                          {step > s.num ? (
+                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                          ) : (
+                            <span className="leading-none text-[12px] sm:text-[13px] font-black">{s.num}</span>
+                          )}
                         </div>
-                        <span className={`text-[11px] sm:text-[12px] font-bold hidden md:inline whitespace-nowrap ${step === s.num ? 'text-[#0866ed]' : step > s.num ? 'text-green-600' : 'text-slate-400'}`}>
+                        <span className={`text-[11.5px] sm:text-[12.5px] font-bold hidden md:inline whitespace-nowrap ${
+                          step === s.num ? 'text-[#0866ed]' : step > s.num ? 'text-green-600' : 'text-slate-400'
+                        }`}>
                           {s.label}
                         </span>
                       </div>
                       {idx < arr.length - 1 && (
-                        <div className={`flex-1 h-[2px] mx-1 sm:mx-2 min-w-[8px] transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
+                        <div className={`flex-1 h-[2px] mx-1.5 sm:mx-3 min-w-[8px] sm:min-w-[12px] transition-colors rounded-full ${
+                          step > s.num ? 'bg-green-500' : 'bg-slate-200'
+                        }`} />
                       )}
                     </React.Fragment>
                   ))}
                 </div>
               ) : (
                 /* 4 Steps for Commercial / Home / Daily */
-                <div className="flex items-center justify-between w-full max-w-xl mx-auto relative py-0.5">
+                <div className="flex items-center justify-between w-full max-w-xl mx-auto relative px-1 sm:px-2">
                   {[
                     { num: 1, label: 'Basic Details' },
                     { num: 2, label: activeTab === 'commercial' ? 'Staff Requirement' : activeTab === 'homecook' ? 'Cook Details' : 'Staff Requirement' },
@@ -1733,18 +1747,30 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                     { num: 4, label: activeTab === 'daily' ? 'Advance Payment' : 'Processing Fee' }
                   ].map((s, idx, arr) => (
                     <React.Fragment key={s.num}>
-                      <div className="flex items-center gap-1 sm:gap-1.5 relative z-10 shrink-0">
-                        <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                          step > s.num ? 'bg-green-500 text-white' : step === s.num ? 'bg-[#0866ed] text-white shadow-sm' : 'bg-slate-200 text-slate-500'
+                      <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] aspect-square rounded-full shrink-0 flex items-center justify-center transition-all ${
+                          step > s.num 
+                            ? 'bg-green-500 text-white shadow-xs' 
+                            : step === s.num 
+                            ? 'bg-[#0866ed] text-white shadow-sm ring-3 ring-blue-100' 
+                            : 'bg-slate-200 text-slate-500'
                         }`}>
-                          {step > s.num ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+                          {step > s.num ? (
+                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                          ) : (
+                            <span className="leading-none text-[12px] sm:text-[13px] font-black">{s.num}</span>
+                          )}
                         </div>
-                        <span className={`text-[12px] font-bold hidden sm:inline whitespace-nowrap ${step === s.num ? 'text-[#0866ed]' : 'text-slate-500'}`}>
+                        <span className={`text-[12px] font-bold hidden sm:inline whitespace-nowrap ${
+                          step === s.num ? 'text-[#0866ed]' : 'text-slate-500'
+                        }`}>
                           {s.label}
                         </span>
                       </div>
                       {idx < arr.length - 1 && (
-                        <div className={`flex-1 h-[2px] mx-2 min-w-[8px] transition-colors ${step > s.num ? 'bg-green-500' : 'bg-slate-200'}`} />
+                        <div className={`flex-1 h-[2px] mx-2 sm:mx-3 min-w-[8px] sm:min-w-[12px] transition-colors rounded-full ${
+                          step > s.num ? 'bg-green-500' : 'bg-slate-200'
+                        }`} />
                       )}
                     </React.Fragment>
                   ))}
@@ -1754,7 +1780,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           )}
 
           {/* Modal Scrollable Body */}
-          <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-slate-800">
+          <div className="p-5 sm:p-7 md:p-8 overflow-y-auto flex-1 text-slate-800">
 
             {/* ================= STEP 1: Basic Details ================= */}
             {step === 1 && !bookingSuccess && (
@@ -3524,84 +3550,127 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
         return (
           <div 
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
             onClick={() => setIsMenuModalOpen(false)}
           >
             <div 
-              className="w-full max-w-xl max-h-[90vh] bg-white rounded-3xl shadow-2xl p-5 sm:p-6 overflow-hidden flex flex-col space-y-4 animate-in zoom-in-95 duration-150"
+              className="w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-3.5 sm:p-6 overflow-hidden flex flex-col space-y-3 sm:space-y-4 animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                <div>
-                  <h3 className="text-[19px] font-extrabold text-slate-900 tracking-tight">Select Menu Items</h3>
-                  <p className="text-[12.5px] text-slate-500">Select dishes for this meal.</p>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  {/* Food Type Toggle */}
-                  <div className="flex flex-col items-end">
-                    <span className="text-[11px] font-bold text-slate-500 mb-1">Food Type</span>
-                    <div className="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setFoodTypeFilter('all')}
-                        className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
-                          foodTypeFilter === 'all'
-                            ? 'bg-[#0866ed] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                        }`}
-                      >
-                        All
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFoodTypeFilter('veg')}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
-                          foodTypeFilter === 'veg'
-                            ? 'bg-[#0866ed] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-emerald-700 hover:bg-white/60'
-                        }`}
-                      >
-                        <span>🌿</span>
-                        <span>Veg</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFoodTypeFilter('non-veg')}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
-                          foodTypeFilter === 'non-veg'
-                            ? 'bg-[#0866ed] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-rose-700 hover:bg-white/60'
-                        }`}
-                      >
-                        <span>🍗</span>
-                        <span>Non-Veg</span>
-                      </button>
-                    </div>
+              <div className="border-b border-slate-100 pb-2.5 sm:pb-3 space-y-2.5 sm:space-y-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-[17px] sm:text-[19px] font-extrabold text-slate-900 tracking-tight truncate">Select Menu Items</h3>
+                    <p className="text-[11.5px] sm:text-[12.5px] text-slate-500 truncate">Select dishes for this meal.</p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsMenuModalOpen(false)}
-                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer self-center"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  {/* Desktop Food Type Toggle + Close Button */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="hidden sm:flex flex-col items-end">
+                      <span className="text-[11px] font-bold text-slate-500 mb-1">Food Type</span>
+                      <div className="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setFoodTypeFilter('all')}
+                          className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                            foodTypeFilter === 'all'
+                              ? 'bg-[#0866ed] text-white shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                          }`}
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFoodTypeFilter('veg')}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                            foodTypeFilter === 'veg'
+                              ? 'bg-[#0866ed] text-white shadow-xs'
+                              : 'text-slate-600 hover:text-emerald-700 hover:bg-white/60'
+                          }`}
+                        >
+                          <span>🌿</span>
+                          <span>Veg</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFoodTypeFilter('non-veg')}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                            foodTypeFilter === 'non-veg'
+                              ? 'bg-[#0866ed] text-white shadow-xs'
+                              : 'text-slate-600 hover:text-rose-700 hover:bg-white/60'
+                          }`}
+                        >
+                          <span>🍗</span>
+                          <span>Non-Veg</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsMenuModalOpen(false)}
+                      className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile Full-Width Segmented Control */}
+                <div className="sm:hidden">
+                  <div className="grid grid-cols-3 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setFoodTypeFilter('all')}
+                      className={`py-1.5 px-2 rounded-lg text-[12px] font-bold transition-all text-center cursor-pointer ${
+                        foodTypeFilter === 'all'
+                          ? 'bg-[#0866ed] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFoodTypeFilter('veg')}
+                      className={`inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[12px] font-bold transition-all text-center cursor-pointer ${
+                        foodTypeFilter === 'veg'
+                          ? 'bg-[#0866ed] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-emerald-700 hover:bg-white/60'
+                      }`}
+                    >
+                      <span>🌿</span>
+                      <span>Veg</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFoodTypeFilter('non-veg')}
+                      className={`inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[12px] font-bold transition-all text-center cursor-pointer ${
+                        foodTypeFilter === 'non-veg'
+                          ? 'bg-[#0866ed] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-rose-700 hover:bg-white/60'
+                      }`}
+                    >
+                      <span>🍗</span>
+                      <span>Non-Veg</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Cuisine Filter Section */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[13.5px] font-bold text-slate-900">
-                    Cuisine <span className="text-slate-400 font-normal text-[12px]">(Select multiple)</span>
+                  <span className="text-[12.5px] sm:text-[13.5px] font-bold text-slate-900">
+                    Cuisine <span className="text-slate-400 font-normal text-[11px] sm:text-[12px]">(Select multiple)</span>
                   </span>
                   {selectedCuisines.length > 0 && (
                     <button
                       type="button"
                       onClick={clearAllCuisines}
-                      className="text-[12.5px] font-bold text-[#0866ed] hover:underline cursor-pointer"
+                      className="text-[11.5px] sm:text-[12.5px] font-bold text-[#0866ed] hover:underline cursor-pointer"
                     >
                       Clear All
                     </button>
@@ -3609,7 +3678,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                 </div>
 
                 {/* Cuisine Filter Chips */}
-                <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 max-h-[96px] sm:max-h-[120px] overflow-y-auto pr-1">
                   {primaryCuisineList.map(c => {
                     const isSelected = selectedCuisines.includes(c.id);
                     return (
@@ -3617,14 +3686,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                         key={c.id}
                         type="button"
                         onClick={() => toggleCuisineSelection(c.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-bold border transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11.5px] sm:text-[12.5px] font-bold border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-[#0866ed] text-white border-[#0866ed] shadow-xs'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                         }`}
                       >
                         {isSelected && (
-                          <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] text-white font-black">
+                          <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] sm:text-[10px] text-white font-black">
                             ✓
                           </span>
                         )}
@@ -3641,14 +3710,14 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                         key={c.id}
                         type="button"
                         onClick={() => toggleCuisineSelection(c.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-bold border transition-all cursor-pointer animate-in fade-in duration-150 ${
+                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11.5px] sm:text-[12.5px] font-bold border transition-all cursor-pointer animate-in fade-in duration-150 ${
                           isSelected
                             ? 'bg-[#0866ed] text-white border-[#0866ed] shadow-xs'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                         }`}
                       >
                         {isSelected && (
-                          <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] text-white font-black">
+                          <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] sm:text-[10px] text-white font-black">
                             ✓
                           </span>
                         )}
@@ -3661,7 +3730,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                   <button
                     type="button"
                     onClick={() => setShowMoreCuisines(!showMoreCuisines)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[12.5px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11.5px] sm:text-[12.5px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
                   >
                     <span>{showMoreCuisines ? '- Less' : '+ More'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMoreCuisines ? 'rotate-180' : ''}`} />
@@ -3671,19 +3740,19 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
               {/* Search Bar */}
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={menuSearchQuery}
                   onChange={(e) => setMenuSearchQuery(e.target.value)}
                   placeholder="Search menu items..."
-                  className="w-full pl-10 pr-9 py-2.5 bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-[13.5px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0866ed] focus:ring-1 focus:ring-[#0866ed] transition-all"
+                  className="w-full pl-9 pr-8 py-2 sm:py-2.5 bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-[13px] sm:text-[13.5px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0866ed] focus:ring-1 focus:ring-[#0866ed] transition-all"
                 />
                 {menuSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setMenuSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -3691,7 +3760,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
               </div>
 
               {/* Items List */}
-              <div className="space-y-2.5 overflow-y-auto max-h-[42vh] pr-1">
+              <div className="space-y-2 sm:space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-1 max-h-[46vh] sm:max-h-[42vh]">
                 {filteredMenuItems.length === 0 ? (
                   <div className="text-center py-8 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
                     <p className="text-[13.5px] font-bold text-slate-700">No dishes found</p>
@@ -3713,13 +3782,13 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                       <div
                         key={food.name}
                         onClick={() => toggleMenuItemSelection(food.name)}
-                        className={`flex items-center justify-between gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                        className={`flex items-center justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-2xl border cursor-pointer transition-all ${
                           isChecked 
                             ? 'border-[#0866ed] bg-[#f4f8ff] shadow-2xs ring-1 ring-[#0866ed]/30' 
                             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                           <div
                             className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
                               isChecked
@@ -3733,29 +3802,35 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                           <img 
                             src={food.image} 
                             alt={food.name} 
-                            className="w-12 h-12 rounded-xl object-cover shadow-2xs shrink-0" 
+                            className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover shadow-2xs shrink-0" 
                           />
 
-                          <div>
-                            <div className="font-extrabold text-[14px] text-slate-900 leading-tight">{food.name}</div>
-                            <div className="text-[11.5px] text-slate-500 font-medium mt-0.5">{food.cuisine}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-extrabold text-[13px] sm:text-[14px] text-slate-900 leading-snug truncate">
+                              {food.name}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] text-slate-500 font-medium mt-0.5 truncate">
+                              <span className="truncate">{food.cuisine}</span>
+                              <span className="text-slate-300 sm:hidden">•</span>
+                              <span className="text-slate-600 font-semibold truncate sm:hidden">{food.category}</span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                           {food.isNonVeg ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10.5px] sm:text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
                               <span>🍗</span>
                               <span>Non-Veg</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10.5px] sm:text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                               <span>🌿</span>
                               <span>Veg</span>
                             </span>
                           )}
 
-                          <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border ${getCategoryBadgeStyle(food.category)}`}>
+                          <span className={`hidden sm:inline-flex px-2.5 py-1 rounded-lg text-[11px] font-extrabold border whitespace-nowrap ${getCategoryBadgeStyle(food.category)}`}>
                             {food.category}
                           </span>
                         </div>
@@ -3766,11 +3841,11 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
               </div>
 
               {/* Save Button */}
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={saveMenuModalItems}
-                  className="w-full bg-[#0866ed] hover:bg-[#0652ba] text-white py-3 rounded-xl font-extrabold text-[14.5px] shadow-md transition-all cursor-pointer active:scale-[0.99]"
+                  className="w-full bg-[#0866ed] hover:bg-[#0652ba] text-white py-2.5 sm:py-3 rounded-xl font-extrabold text-[14px] sm:text-[14.5px] shadow-md transition-all cursor-pointer active:scale-[0.99]"
                 >
                   Save Menu ({tempSelectedMenu.length} Selected)
                 </button>
