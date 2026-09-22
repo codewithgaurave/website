@@ -5,7 +5,7 @@ export default function IndiaMapSVG({ className = "" }: { className?: string }) 
     <img 
       src="/india-map.png" 
       alt="Official Map of India" 
-      className={`object-contain select-none ${className}`} 
+      className={`object-contain select-none rounded-2xl ${className}`} 
     />
   );
 }

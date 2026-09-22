@@ -54,12 +54,12 @@ export default function Footprints() {
 
           {/* Right Content - Map */}
           <div className="relative w-full max-w-lg mx-auto lg:ml-auto flex items-center justify-center">
-            <div className="relative w-full max-w-[480px]">
+            <div className="relative w-full max-w-[480px] bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-slate-100">
               {/* Correct Official India Map with Full Boundaries and States */}
               <img 
                 src="/india-map.png" 
                 alt="ZomoCook Pan India Presence Map" 
-                className="w-full h-auto object-contain drop-shadow-sm select-none"
+                className="w-full h-auto object-contain select-none rounded-2xl sm:rounded-3xl"
               />
 
               {/* Subtle Live Radar Pulse Rings over Active Locations */}
