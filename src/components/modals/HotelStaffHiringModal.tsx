@@ -1653,8 +1653,8 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
               <div className="text-[22px] font-extrabold text-[#073b8f] tracking-tight">
                 Zomo<span className="text-[#ed1c24]">Cook</span>
               </div>
-              <p className="text-[12px] text-slate-500 mt-0.5 font-medium">
-                Book a professional chef for your special occasion
+              <p className="text-[11.5px] sm:text-[12.5px] text-slate-500 mt-0.5 font-medium leading-tight">
+                Book a professional chef &amp; Staff for your Commercial, Domestic &amp; for special occasion
               </p>
             </div>
             <button
@@ -2371,14 +2371,42 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                           </div>
                           <div className="sm:col-span-2">
                             <label className="block text-[11px] font-bold text-slate-600 mb-1">No. of Staff</label>
-                            <input 
-                              type="number"
-                              min={1}
-                              max={50}
-                              value={item.noOfStaff}
-                              onChange={(e) => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, noOfStaff: Math.max(1, parseInt(e.target.value) || 1) } : s))}
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[12.5px] font-bold text-slate-800 outline-none text-center"
-                            />
+                            <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden focus-within:border-[#0866ed]">
+                              <button
+                                type="button"
+                                onClick={() => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, noOfStaff: Math.max(1, (Number(s.noOfStaff) || 1) - 1) } : s))}
+                                className="w-7 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold select-none cursor-pointer shrink-0"
+                              >
+                                −
+                              </button>
+                              <input 
+                                type="text"
+                                inputMode="numeric"
+                                value={item.noOfStaff === 0 ? '' : item.noOfStaff}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  setCommercialStaffList(prev => prev.map(s => s.id === item.id ? {
+                                    ...s,
+                                    noOfStaff: val === '' ? ('' as any) : Math.min(50, parseInt(val, 10) || 1)
+                                  } : s));
+                                }}
+                                onBlur={() => {
+                                  setCommercialStaffList(prev => prev.map(s => s.id === item.id ? {
+                                    ...s,
+                                    noOfStaff: Math.max(1, Number(s.noOfStaff) || 1)
+                                  } : s));
+                                }}
+                                className="w-full h-8 px-1 text-[12.5px] font-bold text-slate-800 outline-none text-center bg-transparent border-x border-slate-100"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setCommercialStaffList(prev => prev.map(s => s.id === item.id ? { ...s, noOfStaff: Math.min(50, (Number(s.noOfStaff) || 1) + 1) } : s))}
+                                className="w-7 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold select-none cursor-pointer shrink-0"
+                              >
+                                +
+                              </button>
+                            </div>
                           </div>
                           <div className="sm:col-span-1 flex justify-center">
                             <button
@@ -2570,26 +2598,84 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
 
                             <div>
                               <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Staff</label>
-                              <input 
-                                type="number"
-                                min={1}
-                                max={30}
-                                value={item.count}
-                                onChange={(e) => updateDailyStaffRow(index, { count: Math.max(1, parseInt(e.target.value) || 1) })}
-                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
-                              />
+                              <div className="flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:border-[#0866ed] transition-colors">
+                                <button
+                                  type="button"
+                                  onClick={() => updateDailyStaffRow(index, { count: Math.max(1, (Number(item.count) || 1) - 1) })}
+                                  className="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors font-extrabold text-[16px] select-none cursor-pointer shrink-0"
+                                >
+                                  −
+                                </button>
+                                <input 
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.count === 0 ? '' : item.count}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    if (val === '') {
+                                      updateDailyStaffRow(index, { count: '' as any });
+                                    } else {
+                                      const num = parseInt(val, 10);
+                                      updateDailyStaffRow(index, { count: Math.min(50, num) });
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    if (!item.count || Number(item.count) < 1) {
+                                      updateDailyStaffRow(index, { count: 1 });
+                                    }
+                                  }}
+                                  className="w-full h-10 px-1 text-[14px] font-extrabold text-slate-800 outline-none text-center bg-transparent border-x border-slate-100"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateDailyStaffRow(index, { count: Math.min(50, (Number(item.count) || 1) + 1) })}
+                                  className="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors font-extrabold text-[16px] select-none cursor-pointer shrink-0"
+                                >
+                                  +
+                                </button>
+                              </div>
                             </div>
 
                             <div>
                               <label className="block text-[12px] font-bold text-slate-700 mb-1">Number of Days</label>
-                              <input 
-                                type="number"
-                                min={1}
-                                max={30}
-                                value={item.days}
-                                onChange={(e) => updateDailyStaffRow(index, { days: Math.max(1, parseInt(e.target.value) || 1) })}
-                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-800 outline-none text-center"
-                              />
+                              <div className="flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:border-[#0866ed] transition-colors">
+                                <button
+                                  type="button"
+                                  onClick={() => updateDailyStaffRow(index, { days: Math.max(1, (Number(item.days) || 1) - 1) })}
+                                  className="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors font-extrabold text-[16px] select-none cursor-pointer shrink-0"
+                                >
+                                  −
+                                </button>
+                                <input 
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.days === 0 ? '' : item.days}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    if (val === '') {
+                                      updateDailyStaffRow(index, { days: '' as any });
+                                    } else {
+                                      const num = parseInt(val, 10);
+                                      updateDailyStaffRow(index, { days: Math.min(90, num) });
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    if (!item.days || Number(item.days) < 1) {
+                                      updateDailyStaffRow(index, { days: 1 });
+                                    }
+                                  }}
+                                  className="w-full h-10 px-1 text-[14px] font-extrabold text-slate-800 outline-none text-center bg-transparent border-x border-slate-100"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateDailyStaffRow(index, { days: Math.min(90, (Number(item.days) || 1) + 1) })}
+                                  className="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors font-extrabold text-[16px] select-none cursor-pointer shrink-0"
+                                >
+                                  +
+                                </button>
+                              </div>
                             </div>
                           </div>
 
@@ -3177,7 +3263,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 w-full sm:w-auto max-w-full">
                           <input 
                             type="text"
                             value={couponInput}
@@ -3186,7 +3272,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                               setCouponError(null);
                             }}
                             placeholder="Enter coupon code (e.g. ZOMO20)"
-                            className="flex-1 sm:w-60 px-3.5 py-2 rounded-xl border border-slate-200 focus:border-[#0866ed] bg-white text-[13px] font-bold outline-none uppercase placeholder:normal-case"
+                            className="min-w-0 flex-1 w-full sm:w-56 px-3.5 py-2 rounded-xl border border-slate-200 focus:border-[#0866ed] bg-white text-[13px] font-bold outline-none uppercase placeholder:normal-case truncate placeholder:truncate"
                           />
                           {appliedCoupon ? (
                             <button
@@ -3197,7 +3283,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                                 setCouponInput('');
                                 setCouponError(null);
                               }}
-                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[13px] rounded-xl transition-all border border-red-200"
+                              className="shrink-0 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[13px] rounded-xl transition-all border border-red-200"
                             >
                               Remove
                             </button>
@@ -3206,7 +3292,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
                               type="button"
                               disabled={isValidatingCoupon}
                               onClick={() => handleApplyCouponCode()}
-                              className="px-6 py-2 bg-[#0866ed] hover:bg-[#0652ba] disabled:bg-slate-300 text-white font-bold text-[13px] rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                              className="shrink-0 px-5 py-2 bg-[#0866ed] hover:bg-[#0652ba] disabled:bg-slate-300 text-white font-bold text-[13px] rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
                             >
                               {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                             </button>
