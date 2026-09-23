@@ -1,48 +1,57 @@
-import React from 'react';
+"use client";
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { ShieldCheck, Briefcase, ChevronRight, Star, CheckCircle2 } from 'lucide-react';
+import HotelStaffHiringModal from '@/components/modals/HotelStaffHiringModal';
 
 export default function Hero() {
-  return (
-    <div className="relative pt-36 mt-2 pb-10 lg:pt-32 lg:pb-16 lg:mt-0 overflow-hidden bg-gradient-to-br from-blue-50/80 via-white to-red-50/50 min-h-[85vh] flex items-center">
-      {/* Premium Theme Background Glows */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-blue-100/40 blur-[80px]"></div>
-        <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-red-50/40 blur-[100px]"></div>
-      </div>
-      
-      {/* Subtle Background Rings (Classic Orbit Effect from Reference) */}
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-10 items-center">
-          
-          {/* Left Content */}
-          <div className="max-w-xl mt-2 lg:mt-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 font-semibold text-[13px] mb-5 shadow-sm">
-              <ShieldCheck className="w-4 h-4" />
-              Trusted Home & Commercial Chef Services
-            </div>
+  return (
+    <>
+      <div className="relative pt-36 mt-2 pb-10 lg:pt-32 lg:pb-16 lg:mt-0 overflow-hidden bg-gradient-to-br from-blue-50/80 via-white to-red-50/50 min-h-[85vh] flex items-center">
+        {/* Premium Theme Background Glows */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-blue-100/40 blur-[80px]"></div>
+          <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-red-50/40 blur-[100px]"></div>
+        </div>
+        
+        {/* Subtle Background Rings (Classic Orbit Effect from Reference) */}
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-10 items-center">
             
-            <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold text-slate-900 leading-[1.18] mb-4 tracking-tight">
-              Hire Professional <br/>
-              <span className="text-[#024a9d]">Cooks & Chefs</span> For <br/>
-              Domestic & Commercial
-            </h1>
-            
-            <p className="text-base sm:text-lg text-slate-600 mb-7 leading-relaxed font-medium max-w-md">
-              Verified, experienced and background-checked cooks for homes, restaurants, cafés & events across India.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mb-7">
-              {/* Hire Now Button - Square with Liquid Fill Animation */}
-              <Link href="/contact" className="relative overflow-hidden group flex items-center justify-center gap-2 bg-[#d62423] text-white px-8 py-3.5 rounded-sm font-bold text-base shadow-[0_6px_16px_-4px_rgba(214,36,35,0.5)] transition-transform hover:-translate-y-0.5">
-                <span className="relative z-10 flex items-center gap-2">
-                  Hire Now
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
-                {/* Liquid Fill Element - High Contrast Dark Red */}
-                <div className="absolute left-0 bottom-0 w-full h-full bg-[#7a0f12] translate-y-full rounded-t-[100%] transition-transform duration-500 ease-out group-hover:translate-y-0 group-hover:rounded-none z-0"></div>
-              </Link>
+            {/* Left Content */}
+            <div className="max-w-xl mt-2 lg:mt-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 font-semibold text-[13px] mb-5 shadow-sm">
+                <ShieldCheck className="w-4 h-4" />
+                Trusted Home & Commercial Chef Services
+              </div>
+              
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold text-slate-900 leading-[1.18] mb-4 tracking-tight">
+                Hire Professional <br/>
+                <span className="text-[#024a9d]">Cooks & Chefs</span> For <br/>
+                Domestic & Commercial
+              </h1>
+              
+              <p className="text-base sm:text-lg text-slate-600 mb-7 leading-relaxed font-medium max-w-md">
+                Verified, experienced and background-checked cooks for homes, restaurants, cafés & events across India.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mb-7">
+                {/* Hire Now Button - Opens Hiring Modal Popup */}
+                <button 
+                  type="button"
+                  onClick={() => setIsHireModalOpen(true)}
+                  className="relative overflow-hidden group flex items-center justify-center gap-2 bg-[#d62423] text-white px-8 py-3.5 rounded-sm font-bold text-base shadow-[0_6px_16px_-4px_rgba(214,36,35,0.5)] transition-transform hover:-translate-y-0.5 cursor-pointer"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    Hire Now
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                  {/* Liquid Fill Element - High Contrast Dark Red */}
+                  <div className="absolute left-0 bottom-0 w-full h-full bg-[#7a0f12] translate-y-full rounded-t-[100%] transition-transform duration-500 ease-out group-hover:translate-y-0 group-hover:rounded-none z-0 pointer-events-none"></div>
+                </button>
               
               {/* Find a Job Button - Square with Liquid Fill Animation */}
               <Link href="/contact" className="relative overflow-hidden group flex items-center justify-center gap-2 bg-[#024a9d] text-white px-8 py-3.5 rounded-sm font-bold text-base shadow-[0_6px_16px_-4px_rgba(2,74,157,0.5)] transition-transform hover:-translate-y-0.5">
@@ -117,5 +126,12 @@ export default function Hero() {
         </div>
       </div>
     </div>
+
+    {/* Master Staff Hiring Modal Triggered by Hero Hire Now */}
+    <HotelStaffHiringModal 
+      isOpen={isHireModalOpen} 
+      onClose={() => setIsHireModalOpen(false)} 
+    />
+  </>
   );
 }

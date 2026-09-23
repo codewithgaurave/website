@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Plus, Trash2, ArrowRight, ArrowLeft, 
   CheckCircle2, Loader2, Calendar, Utensils, Search,
-  ChevronDown, Building2, Home as HomeIcon, Tag, Percent
+  ChevronDown, Building2, Home as HomeIcon, Tag, Percent, Phone
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getApiBaseUrl } from '@/lib/apiConfig';
@@ -580,6 +580,7 @@ const menuCatalog: MenuItemCatalog[] = [
 export default function HotelStaffHiringModal({ isOpen, onClose, initialService = 'commercial' }: HotelStaffHiringModalProps) {
   const [activeTab, setActiveTab] = useState<ServiceTabType>(initialService);
   const [step, setStep] = useState<number>(1);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // Common User & Auth states
   const [name, setName] = useState('');
@@ -871,6 +872,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
   // Check stored user
   useEffect(() => {
     if (isOpen) {
+      setShowExitConfirm(false);
       try {
         const storedUser = localStorage.getItem('zomo_user');
         const storedToken = localStorage.getItem('zomo_token');
@@ -1638,7 +1640,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       <div 
         className="fixed inset-0 z-[9999] flex items-center justify-center p-3.5 sm:p-5 md:p-6 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
         onClick={(e) => {
-          if (e.target === e.currentTarget && !isSubmitting) onClose();
+          if (e.target === e.currentTarget && !isSubmitting) setShowExitConfirm(true);
         }}
       >
         <div 
@@ -1657,7 +1659,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => setShowExitConfirm(true)}
               className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -3854,6 +3856,85 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
           </div>
         );
       })()}
+
+      {/* Exit Confirmation Popup Dialog */}
+      {showExitConfirm && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setShowExitConfirm(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-[390px] w-full text-center relative shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top-right close button */}
+            <button 
+              type="button"
+              onClick={() => setShowExitConfirm(false)}
+              className="absolute top-4 right-4 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Exit badge with door icon and sparkle rays */}
+            <div className="relative w-16 h-16 rounded-full bg-[#fee2e2]/60 flex items-center justify-center mx-auto mb-4">
+              {/* Sparkle rays at top-right */}
+              <svg className="absolute -top-1 right-1 w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="6" y1="14" x2="2" y2="10" />
+                <line x1="12" y1="10" x2="14" y2="4" />
+                <line x1="16" y1="16" x2="22" y2="13" />
+              </svg>
+              
+              {/* Exit Door + Arrow Icon */}
+              <svg 
+                className="w-8 h-8 text-[#ef4444]" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </div>
+
+            {/* Heading */}
+            <h3 className="text-slate-900 font-extrabold text-[20px] mb-2 tracking-tight">
+              Are you sure you want to Exit?
+            </h3>
+
+            {/* Description */}
+            <p className="text-slate-500 text-[13.5px] leading-relaxed mb-6 font-medium">
+              Your booking details may be lost if you exit now.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <a 
+                href="tel:+919519808734"
+                className="bg-[#0066ff] hover:bg-[#0052cc] text-white font-bold py-3 px-2 rounded-xl flex items-center justify-center gap-1.5 text-[13.5px] shadow-sm transition-all active:scale-95"
+              >
+                <Phone className="w-4 h-4 fill-white shrink-0" />
+                <span>Call Zomocook</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExitConfirm(false);
+                  onClose();
+                }}
+                className="bg-white hover:bg-red-50 text-[#ef4444] border-2 border-[#ef4444] font-bold py-3 px-2 rounded-xl flex items-center justify-center text-[13.5px] transition-all active:scale-95 cursor-pointer"
+              >
+                Yes Exits
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
