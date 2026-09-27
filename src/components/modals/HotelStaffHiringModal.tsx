@@ -1513,7 +1513,7 @@ export default function HotelStaffHiringModal({ isOpen, onClose, initialService 
       summaryMessage = `City: ${city}, Address: ${partyVenueAddress}, Dates: ${partyDates.map((d, i) => `Day ${i + 1} (${d.date} - ${d.eventType}): ${d.meals.map(m => `${m.name} [Guests: ${m.guests}, Mode: ${m.menuMode || 'none'}, Items: ${m.menuMode === 'now' ? m.menu.join(', ') : JSON.stringify(m.categories)}]`).join('; ')}`).join(' | ')}, Menu Charges: ₹${partyPricing.menuTotal}, Guests Charges: ₹${partyPricing.guestTotal}, Subtotal: ₹${partyPricing.subtotal}, Coupon: ${appliedCoupon || 'None'}, Discount: ₹${partyPricing.discount}, Total: ₹${partyPricing.finalAmount}, Payment Mode: ${paymentMethod}`;
 
       requestPayload = {
-        jobCategory: 'home',
+        jobCategory: 'party',
         bookingType: 'party',
         name: name.trim(),
         phone: phone.trim().replace(/\D/g, ''),
